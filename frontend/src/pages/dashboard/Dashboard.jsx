@@ -75,7 +75,7 @@ export default function Dashboard() {
           </p>
         </div>
 
-        <div className="bg-orange-200 text-orange-600 px-3 py-3 rounded-full font-semibold flex items-center gap-2">
+        <div className="bg-orange-200 text-orange-500 px-3 py-3 rounded-full font-semibold flex items-center gap-2">
           <Flame size={18} />
           5 day streak
         </div>
@@ -84,128 +84,119 @@ export default function Dashboard() {
 
       {/* Stats */}
 
-      <div className="grid grid-cols-4 gap-6 mt-10">
+      <div className="grid grid-cols-4 gap-4 mt-8">
+  {stats.map((item) => (
+    <div
+      key={item.title}
+      className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+    >
+      <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
+        {item.title}
+      </p>
 
-        {stats.map((item) => (
-          <div
-            key={item.title}
-            className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm hover:shadow-md transition"
-          >
-            <p className="text-gray-500 text-sm">
-              {item.title}
-            </p>
+      <h2 className="mt-2 text-2xl font-semibold text-slate-900">
+        {item.value}
+      </h2>
 
-            <h2 className="text-2xl font-bold mt-2">
-              {item.value}
-            </h2>
-
-            <p className={`mt-2 text-sm font-medium ${item.color}`}>
-              {item.subtitle}
-            </p>
-          </div>
-        ))}
-
-      </div>
+      <p className={`mt-1 text-xs font-medium ${item.color}`}>
+        {item.subtitle}
+      </p>
+    </div>
+  ))}
+</div>
 
       {/* Start Practice */}
 
-      <h2 className="mt-7 mb-5 text-gray-500 font-bold uppercase tracking-wide">
-        Start Practice
-      </h2>
+   <h2 className="mt-8 mb-4 text-xs font-semibold uppercase tracking-widest text-slate-500">
+  Start Practice
+</h2>
 
-      <div className="grid grid-cols-2 gap-3">
+<div className="grid grid-cols-2 gap-4">
 
-        {/* Left */}
+  {/* University Interview */}
+  <div className="rounded-xl bg-blue-600 p-5 text-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+    <h2 className="text-lg font-semibold">
+      University Interview
+    </h2>
 
-        <div className="bg-blue-700 rounded-xl p-5 text-white">
-          <h2 className="text-xl font-bold">
-            University Interview
-          </h2>
+    <p className="mt-2 text-sm leading-6 text-blue-100">
+      Panel questions tailored to your course and application with instant AI feedback.
+    </p>
 
-          <p className="mt-2 text-blue-100 text-sm leading-6">
-            Panel questions tailored to your course & documents, with instant feedback.
-          </p>
+    <button
+      onClick={() => navigate("/practice")}
+      className="mt-5 inline-flex items-center gap-2 rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-blue-600 transition hover:bg-blue-50"
+    >
+      Start Interview
+      <ArrowRight size={16} />
+    </button>
+  </div>
 
-          <button
-            onClick={() => navigate("/practice")}
-            className="mt-4 bg-white text-blue-700 px-6 py-3 rounded-xl font-semibold flex items-center gap-2"
-          >
-            Start interview
-            <ArrowRight size={18} />
-          </button>
-        </div>
+  {/* IELTS Speaking */}
+  <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+    <h2 className="text-lg font-semibold text-slate-900">
+      IELTS Speaking
+    </h2>
 
-        {/* Right */}
+    <p className="mt-2 text-sm leading-6 text-slate-500">
+      Practice all speaking tasks with cue cards, timers, and AI-powered band score feedback.
+    </p>
 
-        <div className="bg-white rounded-xl gap-5 border border-gray-200 p-5">
-          <h2 className="text-xl  font-bold">
-            IELTS Speaking
-          </h2>
+    <button
+      onClick={() => navigate("/speaking")}
+      className="mt-5 inline-flex items-center gap-2 rounded-lg bg-slate-100 px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-200"
+    >
+      Start Practice
+      <ArrowRight size={16} />
+    </button>
+  </div>
 
-          <p className="mt-2 text-gray-500 text-sm leading-6">
-            Full speaking test with cue cards, timing, and a band-score estimate.
-          </p>
-
-          <button className="mt-4 bg-gray-100 px-6 py-3 rounded-xl font-semibold flex items-center gap-2 hover:bg-gray-200">
-            Start practice
-            <ArrowRight size={18} />
-          </button>
-        </div>
-
-      </div>
+</div>
 
       {/* Recent Sessions */}
+<div className="flex items-center justify-between mt-10">
+  <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-500">
+    Recent Sessions
+  </h2>
 
-      <div className="flex justify-between items-center mt-12">
+  <button className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 transition hover:text-blue-700">
+    View All
+    <ArrowRight size={15} />
+  </button>
+</div>
 
-        <h2 className="uppercase text-gray-500 font-bold">
-          Recent Sessions
-        </h2>
+<div className="grid grid-cols-3 gap-4 mt-4">
+  {sessions.map((session) => (
+    <div
+      key={session.title}
+      className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
+    >
+      <div className="flex items-start justify-between">
+        <h3 className="text-base font-semibold text-slate-900">
+          {session.title}
+        </h3>
 
-        <button className="text-blue-600 font-400 flex items-center gap-1">
-          View all
-          <ArrowRight size={16} />
-        </button>
-
+        <span
+          className={`rounded-full px-3 py-1 text-xs font-semibold ${session.scoreColor}`}
+        >
+          {session.score}
+        </span>
       </div>
 
-      <div className="grid grid-cols-3 gap-6 mt-5">
+      <p className="mt-3 text-sm text-slate-500">
+        {session.type}
+      </p>
 
-        {sessions.map((session) => (
-          <div
-            key={session.title}
-            className="bg-white rounded-2xl border border-gray-200 p-6 shadow-sm"
-          >
-            <div className="flex justify-between">
-
-              <h3 className="font-bold text-600">
-                {session.title}
-              </h3>
-
-              <span
-                className={`px-3 py-1 rounded-full text-sm font-semibold ${session.scoreColor}`}
-              >
-                {session.score}
-              </span>
-
-            </div>
-
-            <p className="text-gray-500 mt-5">
-              {session.type}
-            </p>
-
-            <button
-              onClick={() => navigate("/reports")}
-              className="mt-5 text-blue-600 font-semibold flex items-center gap-1"
-            >
-              View report
-              <ArrowRight size={16} />
-            </button>
-
-          </div>
-        ))}
-
-      </div>
+      <button
+        onClick={() => navigate("/reports")}
+        className="mt-5 inline-flex items-center gap-1 text-sm font-medium text-blue-600 transition hover:text-blue-700"
+      >
+        View Report
+        <ArrowRight size={15} />
+      </button>
+    </div>
+  ))}
+</div>
 
     </div>
   );

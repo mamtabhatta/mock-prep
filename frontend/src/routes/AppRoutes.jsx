@@ -5,6 +5,7 @@ import Progress from "../pages/interview/Progress";
 import Dashboard from "../pages/dashboard/Dashboard";
 import Home from "../pages/Home";
 import Interview from "../pages/interview/Interview";
+import Speaking from "../pages/Speaking/Speaking";
 
 
 function App() {
@@ -16,6 +17,7 @@ function App() {
           <Route path="practice" element={<Interview />} />
           <Route path="reports" element={<Reports />} />
           <Route path="progress" element={<Progress />} />
+          <Route path="speaking" element={<Speaking />} />
         </Route>
       </Routes>
     </BrowserRouter>
