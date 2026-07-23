@@ -55,20 +55,20 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="bg-slate-50 min-h-screen p-6 lg:p-8 ml-4">
+    <div className="bg-slate-50 dark:bg-gray-950 min-h-screen p-6 lg:p-8 ml-4 transition-colors duration-300">
 
       {/* Header */}
 
       <div className="flex justify-between items-start">
 
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight text-slate-900">
+         <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
             Namaste, Aashish 👋
           </h1>
 
-          <p className="mt-1 text-sm text-slate-500">
+          <p className="mt-1 text-sm text-slate-500 dark:text-gray-400">
             Preparing for{" "}
-            <span className="font-semibold text-gray-800">
+        <span className="font-semibold text-gray-800 dark:text-gray-200">
               MSc Data Science
             </span>{" "}
             · University of Leeds
@@ -133,7 +133,7 @@ export default function Dashboard() {
   </div>
 
   {/* IELTS Speaking */}
-  <div className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+  <div className="rounded-xl border border-slate-200 dark:border-gray-700 bg-white dark:bg-gray-900 p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md">
     <h2 className="text-lg font-semibold text-slate-900">
       IELTS Speaking
     </h2>

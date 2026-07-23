@@ -2,3 +2,7 @@
 
 /* Enable class-based dark mode */
 @custom-variant dark (&:where(.dark, .dark *));
+html,body,
+#root{
+    height: 100%;
+}
