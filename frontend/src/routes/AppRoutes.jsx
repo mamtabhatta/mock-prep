@@ -6,6 +6,7 @@ import Reports from "../pages/interview/Reports";
 import Progress from "../pages/Progress/Progress";
 import Speaking from "../pages/Speaking/Speaking";
 import Interview from "../pages/interview/Interview";
+import ReportDetail from "../pages/interview/ReportDetail";
 
 function App() {
   return (
@@ -18,6 +19,10 @@ function App() {
           <Route path="reports" element={<Reports />} />
           <Route path="progress" element={<Progress />} />
           <Route path="speaking" element={<Speaking />} />
+         <Route
+  path="/reports/:id"
+  element={<ReportDetail />}
+/>
         </Route>
 
         {/* No Sidebar */}
