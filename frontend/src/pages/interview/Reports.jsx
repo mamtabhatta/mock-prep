@@ -1,4 +1,4 @@
-import ReportCard from "../../components/reports/ReportCard";
+import ReportCard from "../../components/Reports/ReportCard";
 import { reports } from "../../data/reports";
 
 export default function Reports() {

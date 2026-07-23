@@ -1,10 +1,10 @@
 import { useState } from "react";
-import UniversityCard from "../../components/interview/UniversityCard";
-import CourseInput from "../../components/interview/CourseInput";
-import InterviewFormat from "../../components/interview/InterviewFormat";
-import DocumentUpload from "../../components/interview/DocumentUpload";
-import UploadedFile from "../../components/interview/UploadFile";
-import ContinueButton from "../../components/interview/ContinueInterview";
+import UniversityCard from "../../components/practice/UniversityCard";
+import CourseInput from "../../components/practice/CourseInput";
+import InterviewFormat from "../../components/practice/InterviewFormat";
+import DocumentUpload from "../../components/practice/DocumentUpload";
+import UploadedFile from "../../components/practice/UploadFile";
+import ContinueButton from "../../components/practice/ContinueInterview";
 
 function SetupInterview() {
     const [selectedUniversity, setSelectedUniversity] = useState(null);

@@ -1,10 +1,6 @@
 import { useEffect, useState } from "react";
-
-
-
 import { useNavigate } from "react-router-dom";
 import useCamera from "../../hooks/useCamera";
-
 import { X, ArrowRight } from "lucide-react";
 import { questions } from "../../data/questions";
 import RecordingRing from "../../components/Interview/RecordingRing";
@@ -13,13 +9,13 @@ import CameraPreview from "../../components/Interview/CameraPreview";
 
 export default function Interview() {
   const TOTAL_TIME = 120;
-const navigate = useNavigate();
-const {
-  videoRef,
-  stream,
-  loading,
-  permissionDenied,
-} = useCamera();
+  const navigate = useNavigate();
+  const {
+    videoRef,
+    stream,
+    loading,
+    permissionDenied,
+  } = useCamera();
   const [currentQuestion, setCurrentQuestion] = useState(0);
 
   const [secondsLeft, setSecondsLeft] = useState(TOTAL_TIME);
@@ -43,7 +39,7 @@ const {
     return () => clearInterval(timer);
   }, [isRecording, secondsLeft]);
 
-  
+
 
   const progress =
     ((currentQuestion + 1) / questions.length) * 100;
@@ -61,8 +57,8 @@ const {
 
 
   function toggleRecording() {
-  setIsRecording((prev) => !prev);
-}
+    setIsRecording((prev) => !prev);
+  }
 
 
   function resetTimer() {
@@ -71,15 +67,15 @@ const {
   }
 
 
-function nextQuestion() {
-  if (currentQuestion < questions.length - 1) {
-    setCurrentQuestion((prev) => prev + 1);
-    resetTimer();
-  } else {
-    setIsRecording(false);
-    navigate("/reports");
+  function nextQuestion() {
+    if (currentQuestion < questions.length - 1) {
+      setCurrentQuestion((prev) => prev + 1);
+      resetTimer();
+    } else {
+      setIsRecording(false);
+      navigate("/reports");
+    }
   }
-}
 
 
   function skipQuestion() {
@@ -92,7 +88,7 @@ function nextQuestion() {
     nextQuestion();
   }
 
-  
+
 
   return (
     <div className="min-h-screen bg-[#0B1220] text-white">
@@ -100,11 +96,11 @@ function nextQuestion() {
       <div className="max-w-7xl mx-auto px-8 py-8">
 
         {/* ---------- Top Bar ---------- */}
-<TopBar
-  currentQuestion={currentQuestion + 1}
-  totalQuestions={questions.length}
-  progress={progress}
-/>
+        <TopBar
+          currentQuestion={currentQuestion + 1}
+          totalQuestions={questions.length}
+          progress={progress}
+        />
 
         {/* ---------- Question ---------- */}
 
@@ -127,28 +123,28 @@ function nextQuestion() {
           </h1>
 
         </div>
-                {/* ---------- Main Content ---------- */}
+        {/* ---------- Main Content ---------- */}
 
-      <div className="mt-7 flex items-center justify-center gap-8">
+        <div className="mt-7 flex items-center justify-center gap-8">
 
-  <CameraPreview
-    videoRef={videoRef}
-    loading={loading}
-    permissionDenied={permissionDenied}
-  />
+          <CameraPreview
+            videoRef={videoRef}
+            loading={loading}
+            permissionDenied={permissionDenied}
+          />
 
-  <div className="flex flex-col items-center">
-    <RecordingRing
-      secondsLeft={secondsLeft}
-      totalSeconds={TOTAL_TIME}
-      isRecording={isRecording}
-      onToggleRecording={toggleRecording}
-    />
+          <div className="flex flex-col items-center">
+            <RecordingRing
+              secondsLeft={secondsLeft}
+              totalSeconds={TOTAL_TIME}
+              isRecording={isRecording}
+              onToggleRecording={toggleRecording}
+            />
 
-  
-  </div>
 
-</div>
+          </div>
+
+        </div>
 
         {/* ---------- Bottom Buttons ---------- */}
 

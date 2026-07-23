@@ -1,5 +1,4 @@
 import { useParams } from "react-router-dom";
-
 import { reports } from "../../data/reports";
 import ReportHeader from "../../components/Reports/ReportHeader";
 import OverallScoreCard from "../../components/Reports/OverallScoreCard";
@@ -7,14 +6,8 @@ import SnapshotCard from "../../components/Reports/SnapshotCard";
 import QuestionFeedbackCard from "../../components/Reports/QuestionFeedbackCard";
 import NextStepsCard from "../../components/Reports/NextStepsCard";
 
-
-
-
-
 export default function ReportDetail() {
-
   const { id } = useParams();
-
 
   // temporary data
   // later replace with API call

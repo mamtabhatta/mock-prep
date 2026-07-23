@@ -7,36 +7,36 @@ import {
   Sun,
   LogOut,
 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { NavLink } from "react-router-dom";
+import { useNavigate, NavLink } from "react-router-dom";
 
 export default function Sidebar({ darkMode, setDarkMode }) {
-const menus = [
-  {
-    name: "Dashboard",
-    path: "/dashboard",
-    icon: <LayoutDashboard size={18} />,
-  },
-  {
-    name: "Practice",
-    path: "/dashboard/practice",
-    icon: <BookOpen size={18} />,
-  },
-  {
-    name: "My Reports",
-    path: "/dashboard/reports",
-    icon: <FileText size={18} />,
-  },
-  {
-    name: "Progress",
-    path: "/dashboard/progress",
-    icon: <TrendingUp size={18} />,
-  },
-];
   const navigate = useNavigate();
+
+  const menus = [
+    {
+      name: "Dashboard",
+      path: "/dashboard",
+      icon: <LayoutDashboard size={18} />,
+    },
+    {
+      name: "Practice",
+      path: "/dashboard/practice",
+      icon: <BookOpen size={18} />,
+    },
+    {
+      name: "My Reports",
+      path: "/dashboard/reports",
+      icon: <FileText size={18} />,
+    },
+    {
+      name: "Progress",
+      path: "/dashboard/progress",
+      icon: <TrendingUp size={18} />,
+    },
+  ];
+
   return (
     <aside className="w-64 h-screen bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col justify-between px-5 py-6">
-
       {/* Logo */}
       <div>
         <div className="flex items-center gap-3 mb-10">
@@ -55,9 +55,9 @@ const menus = [
             <NavLink
               key={menu.name}
               to={menu.path}
+              end={menu.path === "/dashboard"}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition
-                ${isActive
+                `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition ${isActive
                   ? "bg-blue-50 text-blue-600 dark:bg-blue-900 dark:text-white"
                   : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                 }`
