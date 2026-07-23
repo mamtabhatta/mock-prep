@@ -27,9 +27,6 @@ const {
   const [isRecording, setIsRecording] = useState(false);
 
 
-  // -----------------------------
-  // Countdown
-  // -----------------------------
 
   useEffect(() => {
     if (!isRecording) return;
@@ -46,16 +43,11 @@ const {
     return () => clearInterval(timer);
   }, [isRecording, secondsLeft]);
 
-  // -----------------------------
-  // Progress
-  // -----------------------------
+  
 
   const progress =
     ((currentQuestion + 1) / questions.length) * 100;
 
-  // -----------------------------
-  // Timer Format
-  // -----------------------------
 
   const formatTime = (seconds) => {
     const minutes = Math.floor(seconds / 60);
@@ -67,26 +59,17 @@ const {
     ).padStart(2, "0")}`;
   };
 
-  // -----------------------------
-  // Start Recording
-  // -----------------------------
 
   function toggleRecording() {
   setIsRecording((prev) => !prev);
 }
 
-  // -----------------------------
-  // Reset
-  // -----------------------------
 
   function resetTimer() {
     setSecondsLeft(TOTAL_TIME);
     setIsRecording(false);
   }
 
-  // -----------------------------
-  // Next Question
-  // -----------------------------
 
 function nextQuestion() {
   if (currentQuestion < questions.length - 1) {
@@ -98,17 +81,12 @@ function nextQuestion() {
   }
 }
 
-  // -----------------------------
-  // Skip
-  // -----------------------------
 
   function skipQuestion() {
     nextQuestion();
   }
 
-  // -----------------------------
-  // Submit
-  // -----------------------------
+
 
   function submitAnswer() {
     nextQuestion();
@@ -167,8 +145,7 @@ function nextQuestion() {
       onToggleRecording={toggleRecording}
     />
 
-    {/* Text below ring */}
-    ...
+  
   </div>
 
 </div>
