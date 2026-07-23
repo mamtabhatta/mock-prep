@@ -1,5 +1,5 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-
+import Entry from "../pages/Entry";
 import Home from "../pages/Home";
 import Dashboard from "../pages/dashboard/Dashboard";
 import Reports from "../pages/interview/Reports";
@@ -12,10 +12,11 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-
-        {/* Layout with Sidebar */}
-        <Route path="/" element={<Home />}>
+        <Route path="/" element={<Entry />}></Route>
+        <Route path="/dashboard" element={<Home />}>
           <Route index element={<Dashboard />} />
+          <Route path="practice" element={<SetupInterview />} />
+          <Route path="interview" element={<Interview />} />
           <Route path="reports" element={<Reports />} />
           <Route path="progress" element={<Progress />} />
           <Route path="speaking" element={<Speaking />} />
@@ -24,9 +25,6 @@ function App() {
   element={<ReportDetail />}
 />
         </Route>
-
-        {/* No Sidebar */}
-        <Route path="/interview" element={<Interview />} />
 
       </Routes>
     </BrowserRouter>

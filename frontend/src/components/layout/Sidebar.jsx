@@ -7,6 +7,7 @@ import {
   Sun,
   LogOut,
 } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { NavLink } from "react-router-dom";
 
 export default function Sidebar({ darkMode, setDarkMode }) {
@@ -32,7 +33,7 @@ export default function Sidebar({ darkMode, setDarkMode }) {
       icon: <TrendingUp size={18} />,
     },
   ];
-
+  const navigate = useNavigate();
   return (
     <aside className="w-64 h-screen bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col justify-between px-5 py-6">
 
@@ -56,10 +57,9 @@ export default function Sidebar({ darkMode, setDarkMode }) {
               to={menu.path}
               className={({ isActive }) =>
                 `flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-medium transition
-                ${
-                  isActive
-                    ? "bg-blue-50 text-blue-600 dark:bg-blue-900 dark:text-white"
-                    : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
+                ${isActive
+                  ? "bg-blue-50 text-blue-600 dark:bg-blue-900 dark:text-white"
+                  : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800"
                 }`
               }
             >
@@ -98,7 +98,10 @@ export default function Sidebar({ darkMode, setDarkMode }) {
           </div>
         </div>
 
-        <button className="mt-6 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 hover:text-red-500">
+        <button
+          onClick={() => navigate("/")}
+          className="mt-6 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 hover:text-red-500"
+        >
           <LogOut size={18} />
           Logout
         </button>

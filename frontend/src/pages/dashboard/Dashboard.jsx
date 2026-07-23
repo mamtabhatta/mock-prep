@@ -1,7 +1,4 @@
-import {
-  Flame,
-  ArrowRight,
-} from "lucide-react";
+import { Flame, ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 export default function Dashboard() {
@@ -62,9 +59,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-slate-50 dark:bg-gray-950 p-6 lg:p-8 ml-4 transition-colors duration-300">
 
       {/* Header */}
-
       <div className="flex justify-between items-start">
-
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
             Namaste, Aashish 👋
@@ -83,17 +78,15 @@ export default function Dashboard() {
           <Flame size={18} />
           5 day streak
         </div>
-
       </div>
 
+
       {/* Stats */}
-
       <div className="mt-8 grid grid-cols-4 gap-4">
-
         {stats.map((item) => (
           <div
             key={item.title}
-            className="rounded-xl border border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+            className="rounded-xl border border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
           >
             <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-gray-400">
               {item.title}
@@ -108,20 +101,18 @@ export default function Dashboard() {
             </p>
           </div>
         ))}
-
       </div>
 
-      {/* Start Practice */}
 
+      {/* Practice */}
       <h2 className="mt-8 mb-4 text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-gray-400">
         Start Practice
       </h2>
 
       <div className="grid grid-cols-2 gap-4">
 
-        {/* University Interview */}
-
-        <div className="rounded-xl bg-blue-600 p-5 text-white shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-xl">
+        {/* Interview */}
+        <div className="rounded-xl bg-blue-600 p-5 text-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
 
           <h2 className="text-lg font-semibold">
             University Interview
@@ -132,8 +123,8 @@ export default function Dashboard() {
           </p>
 
           <button
-            onClick={() => navigate("/practice")}
-            className="mt-5 inline-flex items-center gap-2 rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-blue-600 transition hover:bg-blue-50"
+            onClick={() => navigate("/dashboard/practice")}
+            className="mt-5 inline-flex items-center gap-2 rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-blue-600 hover:bg-blue-50"
           >
             Start Interview
             <ArrowRight size={16} />
@@ -141,9 +132,9 @@ export default function Dashboard() {
 
         </div>
 
-        {/* IELTS */}
 
-        <div className="rounded-xl border border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg">
+        {/* IELTS */}
+        <div className="rounded-xl border border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
 
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
             IELTS Speaking
@@ -154,8 +145,8 @@ export default function Dashboard() {
           </p>
 
           <button
-            onClick={() => navigate("/speaking")}
-            className="mt-5 inline-flex items-center gap-2 rounded-lg bg-slate-100 dark:bg-gray-800 px-5 py-2.5 text-sm font-semibold text-slate-700 dark:text-white transition hover:bg-slate-200 dark:hover:bg-gray-700"
+            onClick={() => navigate("/dashboard/speaking")}
+            className="mt-5 inline-flex items-center gap-2 rounded-lg bg-slate-100 dark:bg-gray-800 px-5 py-2.5 text-sm font-semibold text-slate-700 dark:text-white hover:bg-slate-200 dark:hover:bg-gray-700"
           >
             Start Practice
             <ArrowRight size={16} />
@@ -165,28 +156,28 @@ export default function Dashboard() {
 
       </div>
 
-      {/* Recent Sessions */}
 
+      {/* Recent Sessions */}
       <div className="mt-10 flex items-center justify-between">
 
         <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-gray-400">
           Recent Sessions
         </h2>
 
-        <button className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300">
+        <button className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 dark:text-blue-400">
           View All
           <ArrowRight size={15} />
         </button>
 
       </div>
 
+
       <div className="mt-4 grid grid-cols-3 gap-4">
 
         {sessions.map((session) => (
-
           <div
             key={session.title}
-            className="rounded-xl border border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-lg"
+            className="rounded-xl border border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
           >
 
             <div className="flex items-start justify-between">
@@ -195,9 +186,7 @@ export default function Dashboard() {
                 {session.title}
               </h3>
 
-              <span
-                className={`rounded-full px-3 py-1 text-xs font-semibold ${session.scoreColor}`}
-              >
+              <span className={`rounded-full px-3 py-1 text-xs font-semibold ${session.scoreColor}`}>
                 {session.score}
               </span>
 
@@ -209,14 +198,13 @@ export default function Dashboard() {
 
             <button
               onClick={() => navigate("/reports")}
-              className="mt-5 inline-flex items-center gap-1 text-sm font-medium text-blue-600 dark:text-blue-400 hover:text-blue-700 dark:hover:text-blue-300"
+              className="mt-5 inline-flex items-center gap-1 text-sm font-medium text-blue-600 dark:text-blue-400"
             >
               View Report
               <ArrowRight size={15} />
             </button>
 
           </div>
-
         ))}
 
       </div>
