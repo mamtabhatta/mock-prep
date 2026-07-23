@@ -7,7 +7,7 @@ import Progress from "../pages/Progress/Progress";
 import Speaking from "../pages/Speaking/Speaking";
 import Interview from "../pages/interview/Interview";
 import ReportDetail from "../pages/interview/ReportDetail";
-
+import SetupInterview from "../pages/practice/SetupInterview"
 function App() {
   return (
     <BrowserRouter>
@@ -21,7 +21,7 @@ function App() {
           <Route path="progress" element={<Progress />} />
           <Route path="speaking" element={<Speaking />} />
          <Route
-  path="/reports/:id"
+  path="reports/:id"
   element={<ReportDetail />}
 />
         </Route>

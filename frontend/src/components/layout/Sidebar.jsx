@@ -11,28 +11,28 @@ import { useNavigate } from "react-router-dom";
 import { NavLink } from "react-router-dom";
 
 export default function Sidebar({ darkMode, setDarkMode }) {
-  const menus = [
-    {
-      name: "Dashboard",
-      path: "/",
-      icon: <LayoutDashboard size={18} />,
-    },
-    {
-      name: "Practice",
-      path: "/practice",
-      icon: <BookOpen size={18} />,
-    },
-    {
-      name: "My Reports",
-      path: "/reports",
-      icon: <FileText size={18} />,
-    },
-    {
-      name: "Progress",
-      path: "/progress",
-      icon: <TrendingUp size={18} />,
-    },
-  ];
+const menus = [
+  {
+    name: "Dashboard",
+    path: "/dashboard",
+    icon: <LayoutDashboard size={18} />,
+  },
+  {
+    name: "Practice",
+    path: "/dashboard/practice",
+    icon: <BookOpen size={18} />,
+  },
+  {
+    name: "My Reports",
+    path: "/dashboard/reports",
+    icon: <FileText size={18} />,
+  },
+  {
+    name: "Progress",
+    path: "/dashboard/progress",
+    icon: <TrendingUp size={18} />,
+  },
+];
   const navigate = useNavigate();
   return (
     <aside className="w-64 h-screen bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col justify-between px-5 py-6">
