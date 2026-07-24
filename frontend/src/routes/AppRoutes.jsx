@@ -1,34 +1,36 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-
 import Entry from "../pages/Entry";
 import Home from "../pages/Home";
-
 import Dashboard from "../pages/dashboard/Dashboard";
-import SetupInterview from "../pages/practice/SetupInterview";
-
-import Interview from "../pages/interview/Interview";
 import Reports from "../pages/interview/Reports";
-import ReportDetail from "../pages/interview/ReportDetail";
-
-import Speaking from "../pages/Speaking/Speaking";
 import Progress from "../pages/Progress/Progress";
-
+import Speaking from "../pages/Speaking/Speaking";
+import Interview from "../pages/interview/Interview";
+import ReportDetail from "../pages/interview/ReportDetail";
+import SetupInterview from "../pages/practice/SetupInterview"
+import Login from "../pages/auth/Login";
+import Signup from "../pages/auth/Signup";
 function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Entry />} />
-
+        <Route path="/" element={<Entry />}></Route>
+          <Route path="login" element={<Login />} />
+          <Route path="signup" element={<Signup />} />
         <Route path="/dashboard" element={<Home />}>
           <Route index element={<Dashboard />} />
-
           <Route path="practice" element={<SetupInterview />} />
           <Route path="interview" element={<Interview />} />
-          <Route path="speaking" element={<Speaking />} />
           <Route path="reports" element={<Reports />} />
-          <Route path="reports/:id" element={<ReportDetail />} />
           <Route path="progress" element={<Progress />} />
+          <Route path="speaking" element={<Speaking />} />
+        
+         <Route
+  path="reports/:id"
+  element={<ReportDetail />}
+/>
         </Route>
+
       </Routes>
     </BrowserRouter>
   );
