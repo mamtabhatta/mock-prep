@@ -54,27 +54,29 @@ function Entry() {
           </Link>
 
           {/* Admin */}
-          <Link
-            to="/admin/login"
-            className="block bg-blue-600 rounded-3xl p-8 text-white shadow-2xl hover:shadow-blue-300 hover:-translate-y-1 transition-all duration-300"
+          {/* Admin */}
+          <a
+            href="http://localhost:5174/admin/dashboard"
+            className="block rounded-3xl bg-blue-600 p-8 text-white shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-blue-300"
           >
-            <div className="w-16 h-16 rounded-2xl bg-blue-500 flex items-center justify-center mb-8">
+            <div className="mb-8 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-500">
               <Wrench size={30} />
             </div>
 
-            <h3 className="text-3xl font-bold mb-4">
+            <h3 className="mb-4 text-3xl font-bold">
               Super Admin
             </h3>
 
-            <p className="text-blue-100 leading-8 text-lg">
+            <p className="text-lg leading-8 text-blue-100">
               Manage universities, interview questions, IELTS modules and AI
               evaluation settings.
             </p>
 
-            <span className="inline-block mt-8 font-semibold text-lg hover:underline">
+            <span className="mt-8 inline-block text-lg font-semibold hover:underline">
               Continue as admin →
             </span>
-          </Link>
+          </a>
+          {/* </Link> */}
 
         </div>
       </div>

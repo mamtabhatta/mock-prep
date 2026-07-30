@@ -13,32 +13,32 @@ const menuItems = [
   {
     title: "Dashboard",
     icon: LayoutDashboard,
-    path: "/dashboard",
+    path: "/admin/dashboard",
   },
   {
     title: "Universities",
     icon: GraduationCap,
-    path: "/universities",
+    path: "/admin/universities",
   },
   {
     title: "Prompt Manager",
     icon: FileText,
-    path: "/prompts",
+    path: "/admin/prompts",
   },
   {
     title: "Users",
     icon: Users,
-    path: "/users",
+    path: "/admin/users",
   },
   {
     title: "Analytics",
     icon: BarChart3,
-    path: "/analytics",
+    path: "/admin/analytics",
   },
   {
     title: "Settings",
     icon: Settings,
-    path: "/settings",
+    path: "/admin/settings",
   },
 ];
 
