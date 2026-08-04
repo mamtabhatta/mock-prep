@@ -24,7 +24,13 @@ export const users = pgTable("users", {
 
     role: userRole("role").default("student").notNull(),
 
-    isSuspended: boolean("is_suspended").default(false).notNull(),
+    isEmailVerified: boolean("is_email_verified")
+        .default(false)
+        .notNull(),
+
+    isSuspended: boolean("is_suspended")
+        .default(false)
+        .notNull(),
 
     createdAt: timestamp("created_at").defaultNow().notNull(),
 
