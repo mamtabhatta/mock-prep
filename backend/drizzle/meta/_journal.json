@@ -15,6 +15,13 @@
       "when": 1785826527889,
       "tag": "0001_cynical_champions",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "6",
+      "when": 1785857114285,
+      "tag": "0002_vengeful_flatman",
+      "breakpoints": true
     }
   ]
 }
