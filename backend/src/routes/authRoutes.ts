@@ -1,12 +1,25 @@
 import { Router } from "express";
-import { register, login } from "../controllers/authControllers";
-import { refresh } from "../controllers/authControllers";
-const router = Router();
+import {
+    register,
+    login,
+    refresh,
+} from "../controllers/authControllers";
+import { authenticate } from "../middlewares/authMiddleware";
 
-router.post("/refresh", refresh);
+const router = Router();
 
 router.post("/register", register);
 
 router.post("/login", login);
+
+router.post("/refresh", refresh);
+
+router.get("/me", authenticate, (req, res) => {
+    res.status(200).json({
+        success: true,
+        message: "Authenticated",
+        user: (req as any).user,
+    });
+});
 
 export default router;
