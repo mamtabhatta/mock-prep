@@ -8,3 +8,5 @@ export * from './questions';
 export * from './sessions';
 export * from './sessionAnswers';
 export * from './feedbackReports';
+export * from "./prompts";
+export * from "./analyticsEvents";
