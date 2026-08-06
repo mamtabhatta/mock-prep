@@ -26,3 +26,25 @@ export const frequencyEnum = pgEnum('frequency', [
     'common',
     'occasional',
 ]);
+
+export const moduleEnum = pgEnum('module', [
+    'interview',
+    'speaking',
+    'writing',
+    'listening',
+]);
+
+export const sessionStatusEnum = pgEnum('session_status', [
+    'in_progress',
+    'submitted',
+    'transcribing',
+    'ai_reviewed',
+    'counselor_reviewed',
+    'viewed',
+    'failed',
+]);
+
+export const reportStatusEnum = pgEnum('report_status', [
+    'ai_reviewed',
+    'counselor_reviewed',
+]);

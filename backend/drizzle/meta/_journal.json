@@ -22,6 +22,13 @@
       "when": 1785998518289,
       "tag": "0002_good_genesis",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "6",
+      "when": 1785999014809,
+      "tag": "0003_noisy_onslaught",
+      "breakpoints": true
     }
   ]
 }

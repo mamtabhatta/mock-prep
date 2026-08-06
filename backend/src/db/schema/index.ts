@@ -5,3 +5,6 @@ export * from './universities';
 export * from './courses';
 export * from './questionSets';
 export * from './questions';
+export * from './sessions';
+export * from './sessionAnswers';
+export * from './feedbackReports';
