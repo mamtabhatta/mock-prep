@@ -1,9 +1,5 @@
 {
-<<<<<<< HEAD
   "id": "7586c39e-2e10-44e1-a033-29df50d360cc",
-=======
-  "id": "1063fc35-d41e-4696-afb7-1c4a137fb876",
->>>>>>> feature/2.5-password-reset-email-verification
   "prevId": "7a48d1a5-512a-4f44-a45c-510ce6176062",
   "version": "6",
   "dialect": "postgresql",
@@ -156,13 +152,8 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
-<<<<<<< HEAD
     "public.universities": {
       "name": "universities",
-=======
-    "public.refresh_tokens": {
-      "name": "refresh_tokens",
->>>>>>> feature/2.5-password-reset-email-verification
       "schema": "",
       "columns": {
         "id": {
@@ -172,7 +163,6 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
-<<<<<<< HEAD
         "name": {
           "name": "name",
           "type": "text",
@@ -214,43 +204,12 @@
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
-=======
-        "user_id": {
-          "name": "user_id",
-          "type": "uuid",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "token": {
-          "name": "token",
-          "type": "varchar(500)",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "is_revoked": {
-          "name": "is_revoked",
-          "type": "boolean",
-          "primaryKey": false,
-          "notNull": true,
-          "default": false
-        },
-        "expires_at": {
-          "name": "expires_at",
-          "type": "timestamp",
-          "primaryKey": false,
-          "notNull": true
-        },
-        "created_at": {
-          "name": "created_at",
-          "type": "timestamp",
->>>>>>> feature/2.5-password-reset-email-verification
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
         }
       },
       "indexes": {},
-<<<<<<< HEAD
       "foreignKeys": {},
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
@@ -522,15 +481,6 @@
           "tableTo": "question_sets",
           "columnsFrom": [
             "question_set_id"
-=======
-      "foreignKeys": {
-        "refresh_tokens_user_id_users_id_fk": {
-          "name": "refresh_tokens_user_id_users_id_fk",
-          "tableFrom": "refresh_tokens",
-          "tableTo": "users",
-          "columnsFrom": [
-            "user_id"
->>>>>>> feature/2.5-password-reset-email-verification
           ],
           "columnsTo": [
             "id"
@@ -552,7 +502,6 @@
         "counselor",
         "super_admin"
       ]
-<<<<<<< HEAD
     },
     "public.course_track": {
       "name": "course_track",
@@ -604,8 +553,6 @@
         "personal_statement_probe",
         "gap_career_change"
       ]
-=======
->>>>>>> feature/2.5-password-reset-email-verification
     }
   },
   "schemas": {},
