@@ -19,13 +19,19 @@
     {
       "idx": 2,
       "version": "6",
+<<<<<<< HEAD
       "when": 1785998518289,
       "tag": "0002_good_genesis",
+=======
+      "when": 1785857114285,
+      "tag": "0002_vengeful_flatman",
+>>>>>>> feature/2.5-password-reset-email-verification
       "breakpoints": true
     },
     {
       "idx": 3,
       "version": "6",
+<<<<<<< HEAD
       "when": 1785999014809,
       "tag": "0003_noisy_onslaught",
       "breakpoints": true
@@ -35,6 +41,10 @@
       "version": "6",
       "when": 1785999473177,
       "tag": "0004_legal_tattoo",
+=======
+      "when": 1785907584473,
+      "tag": "0003_dry_gorgon",
+>>>>>>> feature/2.5-password-reset-email-verification
       "breakpoints": true
     }
   ]

@@ -1,13 +1,14 @@
-import { Router, Request, Response } from 'express';
+import { Router } from "express";
+import authRoutes from "./authRoutes.js";
 
 const router = Router();
 
-// Health Check Route
-router.get('/health', (req: Request, res: Response) => {
+router.use("/auth", authRoutes);
+
+router.get("/health", (req, res) => {
   res.status(200).json({
-    status: 'success',
-    message: 'Backend API is running cleanly!',
-    timestamp: new Date().toISOString(),
+    success: true,
+    message: "API is running",
   });
 });
 

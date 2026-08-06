@@ -1,6 +1,11 @@
 {
+<<<<<<< HEAD
   "id": "36c22016-f1f9-4773-9ad4-d34470f0beb1",
   "prevId": "7586c39e-2e10-44e1-a033-29df50d360cc",
+=======
+  "id": "aea44adc-1e75-4d55-80d1-f1f86697d4a4",
+  "prevId": "1063fc35-d41e-4696-afb7-1c4a137fb876",
+>>>>>>> feature/2.5-password-reset-email-verification
   "version": "6",
   "dialect": "postgresql",
   "tables": {
@@ -152,6 +157,7 @@
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
+<<<<<<< HEAD
     "public.universities": {
       "name": "universities",
       "schema": "",
@@ -494,6 +500,10 @@
     },
     "public.sessions": {
       "name": "sessions",
+=======
+    "public.refresh_tokens": {
+      "name": "refresh_tokens",
+>>>>>>> feature/2.5-password-reset-email-verification
       "schema": "",
       "columns": {
         "id": {
@@ -509,6 +519,7 @@
           "primaryKey": false,
           "notNull": true
         },
+<<<<<<< HEAD
         "module": {
           "name": "module",
           "type": "module",
@@ -565,11 +576,36 @@
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
+=======
+        "token": {
+          "name": "token",
+          "type": "varchar(500)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_revoked": {
+          "name": "is_revoked",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+>>>>>>> feature/2.5-password-reset-email-verification
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
         }
       },
+<<<<<<< HEAD
       "indexes": {
         "sessions_user_idx": {
           "name": "sessions_user_idx",
@@ -590,6 +626,13 @@
         "sessions_user_id_users_id_fk": {
           "name": "sessions_user_id_users_id_fk",
           "tableFrom": "sessions",
+=======
+      "indexes": {},
+      "foreignKeys": {
+        "refresh_tokens_user_id_users_id_fk": {
+          "name": "refresh_tokens_user_id_users_id_fk",
+          "tableFrom": "refresh_tokens",
+>>>>>>> feature/2.5-password-reset-email-verification
           "tableTo": "users",
           "columnsFrom": [
             "user_id"
@@ -599,6 +642,7 @@
           ],
           "onDelete": "cascade",
           "onUpdate": "no action"
+<<<<<<< HEAD
         },
         "sessions_university_id_universities_id_fk": {
           "name": "sessions_university_id_universities_id_fk",
@@ -638,13 +682,20 @@
           ],
           "onDelete": "no action",
           "onUpdate": "no action"
+=======
+>>>>>>> feature/2.5-password-reset-email-verification
         }
       },
       "compositePrimaryKeys": {},
       "uniqueConstraints": {}
     },
+<<<<<<< HEAD
     "public.session_answers": {
       "name": "session_answers",
+=======
+    "public.email_tokens": {
+      "name": "email_tokens",
+>>>>>>> feature/2.5-password-reset-email-verification
       "schema": "",
       "columns": {
         "id": {
@@ -654,12 +705,18 @@
           "notNull": true,
           "default": "gen_random_uuid()"
         },
+<<<<<<< HEAD
         "session_id": {
           "name": "session_id",
+=======
+        "user_id": {
+          "name": "user_id",
+>>>>>>> feature/2.5-password-reset-email-verification
           "type": "uuid",
           "primaryKey": false,
           "notNull": true
         },
+<<<<<<< HEAD
         "question_id": {
           "name": "question_id",
           "type": "uuid",
@@ -693,11 +750,42 @@
         "created_at": {
           "name": "created_at",
           "type": "timestamp with time zone",
+=======
+        "token": {
+          "name": "token",
+          "type": "varchar(255)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "type": {
+          "name": "type",
+          "type": "varchar(50)",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "is_used": {
+          "name": "is_used",
+          "type": "boolean",
+          "primaryKey": false,
+          "notNull": true,
+          "default": false
+        },
+        "expires_at": {
+          "name": "expires_at",
+          "type": "timestamp",
+          "primaryKey": false,
+          "notNull": true
+        },
+        "created_at": {
+          "name": "created_at",
+          "type": "timestamp",
+>>>>>>> feature/2.5-password-reset-email-verification
           "primaryKey": false,
           "notNull": true,
           "default": "now()"
         }
       },
+<<<<<<< HEAD
       "indexes": {
         "session_answers_session_idx": {
           "name": "session_answers_session_idx",
@@ -836,15 +924,30 @@
           "tableTo": "users",
           "columnsFrom": [
             "reviewed_by"
+=======
+      "indexes": {},
+      "foreignKeys": {
+        "email_tokens_user_id_users_id_fk": {
+          "name": "email_tokens_user_id_users_id_fk",
+          "tableFrom": "email_tokens",
+          "tableTo": "users",
+          "columnsFrom": [
+            "user_id"
+>>>>>>> feature/2.5-password-reset-email-verification
           ],
           "columnsTo": [
             "id"
           ],
+<<<<<<< HEAD
           "onDelete": "no action",
+=======
+          "onDelete": "cascade",
+>>>>>>> feature/2.5-password-reset-email-verification
           "onUpdate": "no action"
         }
       },
       "compositePrimaryKeys": {},
+<<<<<<< HEAD
       "uniqueConstraints": {
         "feedback_reports_session_id_unique": {
           "name": "feedback_reports_session_id_unique",
@@ -854,6 +957,9 @@
           ]
         }
       }
+=======
+      "uniqueConstraints": {}
+>>>>>>> feature/2.5-password-reset-email-verification
     }
   },
   "enums": {
@@ -865,6 +971,7 @@
         "counselor",
         "super_admin"
       ]
+<<<<<<< HEAD
     },
     "public.course_track": {
       "name": "course_track",
@@ -947,6 +1054,8 @@
         "viewed",
         "failed"
       ]
+=======
+>>>>>>> feature/2.5-password-reset-email-verification
     }
   },
   "schemas": {},
