@@ -1,7 +1,6 @@
-import { and, eq } from "drizzle-orm";
-
+import { eq, and, asc } from "drizzle-orm";
 import { db } from "../db";
-import { courses, universities } from "../db/schema";
+import { courses, universities, questionSets, questions } from "../db/schema";
 
 export const fetchUniversities = async () => {
     return await db
@@ -40,4 +39,29 @@ export const fetchCoursesByUniversity = async (
                 eq(courses.isActive, true)
             )
         );
+};
+export const getQuestionSetsByCourseId = async (courseId: string) => {
+    return await db
+        .select()
+        .from(questionSets)
+        .where(
+            and(
+                eq(questionSets.courseId, courseId),
+                eq(questionSets.isActive, true)
+            )
+        )
+        .orderBy(asc(questionSets.createdAt));
+};
+
+export const getQuestionsBySetId = async (setId: string) => {
+    return await db
+        .select()
+        .from(questions)
+        .where(
+            and(
+                eq(questions.questionSetId, setId),
+                eq(questions.isActive, true)
+            )
+        )
+        .orderBy(asc(questions.orderIndex));
 };

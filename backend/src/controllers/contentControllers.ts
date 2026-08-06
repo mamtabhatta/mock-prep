@@ -27,3 +27,36 @@ export const getCoursesByUniversity = async (
         next(error);
     }
 };
+export const getQuestionSets = async (req: Request, res: Response) => {
+    try {
+        const { courseId } = req.params;
+        const data = await contentService.getQuestionSetsByCourseId(courseId);
+
+        res.status(200).json({
+            success: true,
+            data,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch question sets",
+        });
+    }
+};
+
+export const getQuestions = async (req: Request, res: Response) => {
+    try {
+        const { setId } = req.params;
+        const data = await contentService.getQuestionsBySetId(setId);
+
+        res.status(200).json({
+            success: true,
+            data,
+        });
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Failed to fetch questions",
+        });
+    }
+};
