@@ -19,6 +19,10 @@ export const profiles = pgTable("profiles", {
         .unique()
         .references(() => users.id, { onDelete: "cascade" }),
 
+    cvFileUrl: text("cv_file_url"),
+    transcriptFileUrl: text("transcript_file_url"),
+    sopFileUrl: text("sop_file_url"),
+    
     academicBackgroundText: text("academic_background_text"),
 
     personalStatementText: text("personal_statement_text"),
