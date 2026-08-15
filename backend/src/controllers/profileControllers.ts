@@ -5,7 +5,7 @@ import {
     updateProfileDocumentSchema
 } from "../validations/profileValidation";
 import { generatePresignedPutUrl } from "../services/storageServices";
-import { prisma } from "../config/db";
+import prisma from "../config/db";
 
 export const getDocumentPresignedUrl = async (
     req: AuthRequest,
@@ -48,7 +48,7 @@ export const updateProfileDocument = async (
 
         const { kind, key } = updateProfileDocumentSchema.parse(req.body);
 
-        // Maps 'cv' -> 'cv_file_url', 'transcript' -> 'transcript_file_url', 'sop' -> 'sop_file_url'
+        // Maps 'cv' -> 'cv_file_url', 'transcript' -> 'transcript_file_url', etc.
         const fieldToUpdate = `${kind}_file_url`;
 
         const updatedProfile = await prisma.profiles.upsert({
