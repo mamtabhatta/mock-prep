@@ -1,0 +1,289 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model analytics_events {
+  id         String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String?   @db.Uuid
+  session_id String?   @db.Uuid
+  event_type String
+  metadata   Json?     @default("{}")
+  created_at DateTime  @default(now()) @db.Timestamptz(6)
+  sessions   sessions? @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "analytics_events_session_id_sessions_id_fk")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model courses {
+  id               String           @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  university_id    String           @db.Uuid
+  name             String           @db.VarChar(255)
+  track            course_track     @default(admission)
+  interview_format interview_format @default(panel)
+  duration_mins    Int?
+  panel_size       Int?
+  student_context  String?          @db.VarChar(2000)
+  admin_notes      String?          @db.VarChar(2000)
+  is_active        Boolean          @default(true)
+  created_at       DateTime         @default(now()) @db.Timestamp(6)
+  universities     universities     @relation(fields: [university_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "courses_university_id_universities_id_fk")
+  question_sets    question_sets[]
+  sessions         sessions[]
+
+  @@index([university_id], map: "courses_university_idx")
+}
+
+model email_tokens {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String   @db.Uuid
+  token      String   @db.VarChar(255)
+  type       String   @db.VarChar(50)
+  is_used    Boolean  @default(false)
+  expires_at DateTime @db.Timestamp(6)
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  users      users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "email_tokens_user_id_users_id_fk")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model feedback_reports {
+  id                      String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  session_id              String        @unique(map: "feedback_reports_session_id_unique") @db.Uuid
+  quick_snapshot_json     Json?
+  deep_report_json        Json?
+  scores_json             Json?
+  ai_feedback_json        Json?
+  counselor_feedback_json Json?
+  reviewed_by             String?       @db.Uuid
+  status                  report_status @default(ai_reviewed)
+  created_at              DateTime      @default(now()) @db.Timestamptz(6)
+  updated_at              DateTime      @default(now()) @db.Timestamptz(6)
+  users                   users?        @relation(fields: [reviewed_by], references: [id], onUpdate: NoAction, map: "feedback_reports_reviewed_by_users_id_fk")
+  sessions                sessions      @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "feedback_reports_session_id_sessions_id_fk")
+
+  @@index([session_id], map: "feedback_reports_session_idx")
+}
+
+model profiles {
+  id                       String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id                  String   @unique(map: "profiles_user_id_unique") @db.Uuid
+  bio                      String?
+  profile_image            String?  @db.VarChar(255)
+  country                  String?  @db.VarChar(100)
+  created_at               DateTime @default(now()) @db.Timestamp(6)
+  updated_at               DateTime @default(now()) @db.Timestamp(6)
+  academic_background_text String?
+  personal_statement_text  String?
+  ielts_target_band        Float?   @db.Real
+  english_self_rating      Int?
+  concerns_text            String?
+  target_university_id     String?  @db.Uuid
+  target_course_id         String?  @db.Uuid
+  cv_file_url              String?
+  transcript_file_url      String?
+  sop_file_url             String?
+  users                    users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "profiles_user_id_users_id_fk")
+}
+
+model prompts {
+  id           String        @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  module       prompt_module
+  version      Int
+  content_text String
+  is_active    Boolean       @default(false)
+  created_by   String?       @db.Uuid
+  created_at   DateTime      @default(now()) @db.Timestamptz(6)
+  users        users?        @relation(fields: [created_by], references: [id], onDelete: NoAction, onUpdate: NoAction, map: "prompts_created_by_users_id_fk")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model question_sets {
+  id          String      @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  course_id   String      @db.Uuid
+  name        String      @db.VarChar(255)
+  description String?     @db.VarChar(1000)
+  is_active   Boolean     @default(false)
+  created_at  DateTime    @default(now()) @db.Timestamp(6)
+  courses     courses     @relation(fields: [course_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "question_sets_course_id_courses_id_fk")
+  questions   questions[]
+  sessions    sessions[]
+
+  @@index([course_id], map: "question_sets_course_idx")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model questions {
+  id              String            @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  question_set_id String            @db.Uuid
+  text            String            @db.VarChar(2000)
+  type_tag        question_type?
+  difficulty      difficulty        @default(dbgenerated("3"))
+  frequency       frequency         @default(common)
+  is_active       Boolean           @default(true)
+  version         Int               @default(1)
+  order_index     Int               @default(0)
+  created_at      DateTime          @default(now()) @db.Timestamp(6)
+  question_sets   question_sets     @relation(fields: [question_set_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "questions_question_set_id_question_sets_id_fk")
+  session_answers session_answers[]
+
+  @@index([question_set_id], map: "questions_set_idx")
+}
+
+model refresh_tokens {
+  id         String   @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id    String   @db.Uuid
+  token      String   @db.VarChar(500)
+  is_revoked Boolean  @default(false)
+  expires_at DateTime @db.Timestamp(6)
+  created_at DateTime @default(now()) @db.Timestamp(6)
+  users      users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "refresh_tokens_user_id_users_id_fk")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model session_answers {
+  id               String    @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  session_id       String    @db.Uuid
+  question_id      String    @db.Uuid
+  recording_url    String?
+  transcript       String?
+  duration_seconds Int?
+  notes            String?
+  created_at       DateTime  @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime  @default(now()) @db.Timestamptz(6)
+  questions        questions @relation(fields: [question_id], references: [id], onUpdate: NoAction, map: "session_answers_question_id_questions_id_fk")
+  sessions         sessions  @relation(fields: [session_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "session_answers_session_id_sessions_id_fk")
+
+  @@index([session_id], map: "session_answers_session_idx")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model sessions {
+  id               String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  user_id          String             @db.Uuid
+  module           module             @default(interview)
+  university_id    String?            @db.Uuid
+  course_id        String?            @db.Uuid
+  question_set_id  String?            @db.Uuid
+  status           session_status     @default(in_progress)
+  started_at       DateTime           @default(now()) @db.Timestamptz(6)
+  submitted_at     DateTime?          @db.Timestamptz(6)
+  scored_at        DateTime?          @db.Timestamptz(6)
+  created_at       DateTime           @default(now()) @db.Timestamptz(6)
+  updated_at       DateTime           @default(now()) @db.Timestamptz(6)
+  analytics_events analytics_events[]
+  feedback_reports feedback_reports?
+  session_answers  session_answers[]
+  courses          courses?           @relation(fields: [course_id], references: [id], onUpdate: NoAction, map: "sessions_course_id_courses_id_fk")
+  question_sets    question_sets?     @relation(fields: [question_set_id], references: [id], onUpdate: NoAction, map: "sessions_question_set_id_question_sets_id_fk")
+  universities     universities?      @relation(fields: [university_id], references: [id], onUpdate: NoAction, map: "sessions_university_id_universities_id_fk")
+  users            users              @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: NoAction, map: "sessions_user_id_users_id_fk")
+
+  @@index([status])
+  @@index([user_id], map: "sessions_user_idx")
+}
+
+/// This model contains row level security and requires additional setup for migrations. Visit https://pris.ly/d/row-level-security for more info.
+model universities {
+  id                 String     @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  name               String     @db.VarChar(255)
+  country            String     @default("United Kingdom") @db.VarChar(255)
+  description        String?    @db.VarChar(1000)
+  logo_url           String?    @db.VarChar(500)
+  interview_overview String?    @db.VarChar(2000)
+  is_active          Boolean    @default(true)
+  created_at         DateTime   @default(now()) @db.Timestamp(6)
+  courses            courses[]
+  sessions           sessions[]
+}
+
+model users {
+  id                String             @id @default(dbgenerated("gen_random_uuid()")) @db.Uuid
+  email             String             @unique(map: "users_email_unique") @db.VarChar(255)
+  password_hash     String             @db.VarChar(255)
+  full_name         String             @db.VarChar(255)
+  role              user_role          @default(student)
+  is_suspended      Boolean            @default(false)
+  created_at        DateTime           @default(now()) @db.Timestamp(6)
+  updated_at        DateTime           @default(now()) @db.Timestamp(6)
+  is_email_verified Boolean            @default(false)
+  email_tokens      email_tokens[]
+  feedback_reports  feedback_reports[]
+  profiles          profiles?
+  prompts           prompts[]
+  refresh_tokens    refresh_tokens[]
+  sessions          sessions[]
+}
+
+enum course_track {
+  admission
+  visa
+}
+
+enum difficulty {
+  LEVEL_1 @map("1")
+  LEVEL_2 @map("2")
+  LEVEL_3 @map("3")
+  LEVEL_4 @map("4")
+  LEVEL_5 @map("5")
+}
+
+enum frequency {
+  almost_always
+  common
+  occasional
+}
+
+enum interview_format {
+  mmi
+  panel
+  portfolio
+  one_on_one
+  none
+}
+
+enum module {
+  interview
+  speaking
+  writing
+  listening
+}
+
+enum prompt_module {
+  interview_feedback
+  ielts_speaking
+  ielts_writing
+  ielts_listening_summary
+}
+
+enum question_type {
+  motivational
+  subject_knowledge
+  situational
+  ethical
+  personal_statement_probe
+  gap_career_change
+}
+
+enum report_status {
+  ai_reviewed
+  counselor_reviewed
+}
+
+enum session_status {
+  in_progress
+  submitted
+  transcribing
+  ai_reviewed
+  counselor_reviewed
+  viewed
+  failed
+}
+
+enum user_role {
+  student
+  counselor
+  super_admin
+}

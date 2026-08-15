@@ -13,4 +13,13 @@ export const config = {
   hashSaltRounds: parseInt(process.env.HASH_SALT_ROUNDS || '10', 10),
   openaiApiKey: process.env.OPENAI_API_KEY || '',
   anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
+  s3: {
+    endpoint: process.env.S3_ENDPOINT || 'http://localhost:9000',
+    region: process.env.S3_REGION || 'us-east-1',
+    accessKeyId: process.env.S3_ACCESS_KEY_ID || 'minio',
+    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY || 'minio123',
+    bucketName: process.env.S3_BUCKET_NAME || 'mockprep-documents',
+  },
 };
+
+export default config;
