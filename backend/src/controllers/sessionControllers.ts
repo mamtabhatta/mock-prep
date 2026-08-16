@@ -60,3 +60,32 @@ export const getUserSessions = async (
         next(error);
     }
 };
+export const getSessionById = async (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized",
+            });
+        }
+
+        const { sessionId } = req.params;
+
+        const session = await sessionService.getSessionById(
+            req.user.userId,
+            sessionId
+        );
+
+        return res.status(200).json({
+            success: true,
+            message: "Session retrieved successfully",
+            data: session,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
