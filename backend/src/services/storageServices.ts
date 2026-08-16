@@ -5,10 +5,12 @@ export const s3Client = new S3Client({
     region: process.env.AWS_REGION || "us-east-1",
     endpoint: process.env.S3_ENDPOINT || "http://localhost:9000",
     credentials: {
-        accessKeyId: process.env.AWS_ACCESS_KEY_ID || "minioadmin",
-        secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || "minioadmin",
+        accessKeyId:
+            process.env.AWS_ACCESS_KEY_ID || "minioadmin",
+        secretAccessKey:
+            process.env.AWS_SECRET_ACCESS_KEY || "minioadmin",
     },
-    forcePathStyle: true, // Required for local MinIO / S3 emulation
+    forcePathStyle: true,
 });
 
 export const generatePresignedPutUrl = async (
@@ -16,7 +18,9 @@ export const generatePresignedPutUrl = async (
     contentType: string
 ): Promise<string> => {
     const command = new PutObjectCommand({
-        Bucket: process.env.S3_BUCKET_NAME || "mockprep-documents",
+        Bucket:
+            process.env.S3_BUCKET_NAME ||
+            "mockprep-documents",
         Key: key,
         ContentType: contentType,
     });
@@ -26,3 +30,21 @@ export const generatePresignedPutUrl = async (
     });
 };
 
+export const uploadAudio = async (
+    key: string,
+    buffer: Buffer,
+    contentType: string
+): Promise<string> => {
+    const command = new PutObjectCommand({
+        Bucket:
+            process.env.S3_BUCKET_NAME ||
+            "mockprep-documents",
+        Key: key,
+        Body: buffer,
+        ContentType: contentType,
+    });
+
+    await s3Client.send(command);
+
+    return key;
+};

@@ -149,6 +149,7 @@ async function main() {
     process.exit(0);
 }
 
-main().catch(() => {
+main().catch((error) => {
+    console.error("SEED ERROR:", error);
     process.exit(1);
 });

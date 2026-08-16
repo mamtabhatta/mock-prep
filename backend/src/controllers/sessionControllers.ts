@@ -1,8 +1,17 @@
-import { Response, NextFunction } from "express";
+import {
+    Response,
+    NextFunction,
+} from "express";
 
 import { AuthRequest } from "../middlewares/authMiddleware";
-import { createSessionSchema } from "../validations/sessionValidation";
+
+import {
+    createSessionSchema,
+    createSessionAnswerSchema,
+} from "../validations/sessionValidation";
+
 import * as sessionService from "../services/sessionServices";
+
 
 export const createSession = async (
     req: AuthRequest,
@@ -10,6 +19,7 @@ export const createSession = async (
     next: NextFunction
 ) => {
     try {
+
         if (!req.user) {
             return res.status(401).json({
                 success: false,
@@ -17,22 +27,32 @@ export const createSession = async (
             });
         }
 
-        const data = createSessionSchema.parse(req.body);
 
-        const session = await sessionService.createSession(
-            req.user.userId,
-            data
-        );
+        const data =
+            createSessionSchema.parse(
+                req.body
+            );
+
+
+        const session =
+            await sessionService.createSession(
+                req.user.userId,
+                data
+            );
+
 
         return res.status(201).json({
             success: true,
-            message: "Session created successfully",
+            message:
+                "Session created successfully",
             data: session,
         });
+
     } catch (error) {
         next(error);
     }
 };
+
 
 export const getUserSessions = async (
     req: AuthRequest,
@@ -40,6 +60,7 @@ export const getUserSessions = async (
     next: NextFunction
 ) => {
     try {
+
         if (!req.user) {
             return res.status(401).json({
                 success: false,
@@ -47,25 +68,33 @@ export const getUserSessions = async (
             });
         }
 
-        const sessions = await sessionService.getUserSessions(
-            req.user.userId
-        );
+
+        const sessions =
+            await sessionService.getUserSessions(
+                req.user.userId
+            );
+
 
         return res.status(200).json({
             success: true,
-            message: "Sessions retrieved successfully",
+            message:
+                "Sessions retrieved successfully",
             data: sessions,
         });
+
     } catch (error) {
         next(error);
     }
 };
+
+
 export const getSessionById = async (
     req: AuthRequest,
     res: Response,
     next: NextFunction
 ) => {
     try {
+
         if (!req.user) {
             return res.status(401).json({
                 success: false,
@@ -73,18 +102,83 @@ export const getSessionById = async (
             });
         }
 
-        const { sessionId } = req.params;
 
-        const session = await sessionService.getSessionById(
-            req.user.userId,
-            sessionId
-        );
+        const { sessionId } =
+            req.params;
+
+
+        const session =
+            await sessionService.getSessionById(
+                req.user.userId,
+                sessionId
+            );
+
 
         return res.status(200).json({
             success: true,
-            message: "Session retrieved successfully",
+            message:
+                "Session retrieved successfully",
             data: session,
         });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+export const createSessionAnswer = async (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+
+        if (!req.user) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized",
+            });
+        }
+
+
+        if (!req.file) {
+            return res.status(400).json({
+                success: false,
+                message:
+                    "Audio file is required",
+            });
+        }
+
+
+        const { sessionId } =
+            req.params;
+
+
+        const data =
+            createSessionAnswerSchema.parse(
+                req.body
+            );
+
+
+        const answer =
+            await sessionService.createSessionAnswer(
+                req.user.userId,
+                sessionId,
+                data.questionId,
+                req.file.buffer,
+                req.file.mimetype,
+                data.durationSeconds
+            );
+
+
+        return res.status(201).json({
+            success: true,
+            message:
+                "Answer uploaded successfully",
+            data: answer,
+        });
+
     } catch (error) {
         next(error);
     }
