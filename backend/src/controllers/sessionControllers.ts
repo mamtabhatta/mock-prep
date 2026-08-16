@@ -1,3 +1,4 @@
+
 import {
     Response,
     NextFunction,
@@ -10,7 +11,8 @@ import {
     createSessionAnswerSchema,
 } from "../validations/sessionValidation";
 
-import * as sessionService from "../services/sessionServices";
+import * as sessionService
+    from "../services/sessionServices";
 
 
 export const createSession = async (
@@ -18,6 +20,7 @@ export const createSession = async (
     res: Response,
     next: NextFunction
 ) => {
+
     try {
 
         if (!req.user) {
@@ -49,6 +52,7 @@ export const createSession = async (
         });
 
     } catch (error) {
+
         next(error);
     }
 };
@@ -59,6 +63,7 @@ export const getUserSessions = async (
     res: Response,
     next: NextFunction
 ) => {
+
     try {
 
         if (!req.user) {
@@ -83,6 +88,7 @@ export const getUserSessions = async (
         });
 
     } catch (error) {
+
         next(error);
     }
 };
@@ -93,6 +99,7 @@ export const getSessionById = async (
     res: Response,
     next: NextFunction
 ) => {
+
     try {
 
         if (!req.user) {
@@ -122,6 +129,7 @@ export const getSessionById = async (
         });
 
     } catch (error) {
+
         next(error);
     }
 };
@@ -132,6 +140,7 @@ export const createSessionAnswer = async (
     res: Response,
     next: NextFunction
 ) => {
+
     try {
 
         if (!req.user) {
@@ -180,6 +189,49 @@ export const createSessionAnswer = async (
         });
 
     } catch (error) {
+
         next(error);
     }
 };
+
+
+export const deleteSession = async (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+) => {
+
+    try {
+
+        if (!req.user) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized",
+            });
+        }
+
+
+        const { sessionId } =
+            req.params;
+
+
+        const result =
+            await sessionService.deleteSession(
+                req.user.userId,
+                sessionId
+            );
+
+
+        return res.status(200).json({
+            success: true,
+            message:
+                "Session deleted successfully",
+            data: result,
+        });
+
+    } catch (error) {
+
+        next(error);
+    }
+};
+

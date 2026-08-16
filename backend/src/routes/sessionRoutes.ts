@@ -1,4 +1,6 @@
+
 import { Router } from "express";
+
 import multer from "multer";
 
 import {
@@ -6,19 +8,50 @@ import {
     getUserSessions,
     getSessionById,
     createSessionAnswer,
+    deleteSession,
 } from "../controllers/sessionControllers";
 
-import { authenticate } from "../middlewares/authMiddleware";
+import {
+    authenticate,
+} from "../middlewares/authMiddleware";
+
 
 const router = Router();
 
-const upload = multer({ dest: "uploads/" });
 
-router.post("/", authenticate, createSession);
+const upload =
+    multer({
+        dest: "uploads/",
+    });
 
-router.get("/", authenticate, getUserSessions);
 
-router.get("/:sessionId", authenticate, getSessionById);
+router.post(
+    "/",
+    authenticate,
+    createSession
+);
+
+
+router.get(
+    "/",
+    authenticate,
+    getUserSessions
+);
+
+
+router.get(
+    "/:sessionId",
+    authenticate,
+    getSessionById
+);
+
+
+router.delete(
+    "/:sessionId",
+    authenticate,
+    deleteSession
+);
+
 
 router.post(
     "/:sessionId/answers",
@@ -27,4 +60,6 @@ router.post(
     createSessionAnswer
 );
 
+
 export default router;
+
