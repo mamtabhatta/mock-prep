@@ -1,14 +1,15 @@
-
 import {
-    DeleteObjectCommand,
     PutObjectCommand,
+    DeleteObjectCommand,
     S3Client,
 } from "@aws-sdk/client-s3";
 
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
+import {
+    getSignedUrl,
+} from "@aws-sdk/s3-request-presigner";
 
 
-export const s3Client = new S3Client({
+const s3Client = new S3Client({
     region:
         process.env.AWS_REGION ||
         "us-east-1",
@@ -31,7 +32,7 @@ export const s3Client = new S3Client({
 });
 
 
-const bucketName =
+const bucket =
     process.env.S3_BUCKET_NAME ||
     "mockprep-documents";
 
@@ -41,11 +42,12 @@ export const generatePresignedPutUrl = async (
     contentType: string
 ): Promise<string> => {
 
-    const command = new PutObjectCommand({
-        Bucket: bucketName,
-        Key: key,
-        ContentType: contentType,
-    });
+    const command =
+        new PutObjectCommand({
+            Bucket: bucket,
+            Key: key,
+            ContentType: contentType,
+        });
 
     return await getSignedUrl(
         s3Client,
@@ -63,12 +65,13 @@ export const uploadAudio = async (
     contentType: string
 ): Promise<string> => {
 
-    const command = new PutObjectCommand({
-        Bucket: bucketName,
-        Key: key,
-        Body: buffer,
-        ContentType: contentType,
-    });
+    const command =
+        new PutObjectCommand({
+            Bucket: bucket,
+            Key: key,
+            Body: buffer,
+            ContentType: contentType,
+        });
 
     await s3Client.send(command);
 
@@ -76,15 +79,15 @@ export const uploadAudio = async (
 };
 
 
-export const deleteAudio = async (
+export const deleteObject = async (
     key: string
 ): Promise<void> => {
 
-    const command = new DeleteObjectCommand({
-        Bucket: bucketName,
-        Key: key,
-    });
+    const command =
+        new DeleteObjectCommand({
+            Bucket: bucket,
+            Key: key,
+        });
 
     await s3Client.send(command);
 };
-

@@ -1,4 +1,3 @@
-
 import {
     Response,
     NextFunction,
@@ -15,14 +14,16 @@ import * as sessionService
     from "../services/sessionServices";
 
 
+// ============================================
+// CREATE SESSION
+// ============================================
+
 export const createSession = async (
     req: AuthRequest,
     res: Response,
     next: NextFunction
 ) => {
-
     try {
-
         if (!req.user) {
             return res.status(401).json({
                 success: false,
@@ -30,19 +31,16 @@ export const createSession = async (
             });
         }
 
-
         const data =
             createSessionSchema.parse(
                 req.body
             );
-
 
         const session =
             await sessionService.createSession(
                 req.user.userId,
                 data
             );
-
 
         return res.status(201).json({
             success: true,
@@ -52,20 +50,21 @@ export const createSession = async (
         });
 
     } catch (error) {
-
         next(error);
     }
 };
 
+
+// ============================================
+// GET USER SESSIONS
+// ============================================
 
 export const getUserSessions = async (
     req: AuthRequest,
     res: Response,
     next: NextFunction
 ) => {
-
     try {
-
         if (!req.user) {
             return res.status(401).json({
                 success: false,
@@ -73,12 +72,10 @@ export const getUserSessions = async (
             });
         }
 
-
         const sessions =
             await sessionService.getUserSessions(
                 req.user.userId
             );
-
 
         return res.status(200).json({
             success: true,
@@ -88,20 +85,21 @@ export const getUserSessions = async (
         });
 
     } catch (error) {
-
         next(error);
     }
 };
 
+
+// ============================================
+// GET SESSION DETAIL
+// ============================================
 
 export const getSessionById = async (
     req: AuthRequest,
     res: Response,
     next: NextFunction
 ) => {
-
     try {
-
         if (!req.user) {
             return res.status(401).json({
                 success: false,
@@ -109,17 +107,14 @@ export const getSessionById = async (
             });
         }
 
-
         const { sessionId } =
             req.params;
-
 
         const session =
             await sessionService.getSessionById(
                 req.user.userId,
                 sessionId
             );
-
 
         return res.status(200).json({
             success: true,
@@ -129,27 +124,27 @@ export const getSessionById = async (
         });
 
     } catch (error) {
-
         next(error);
     }
 };
 
+
+// ============================================
+// CREATE SESSION ANSWER
+// ============================================
 
 export const createSessionAnswer = async (
     req: AuthRequest,
     res: Response,
     next: NextFunction
 ) => {
-
     try {
-
         if (!req.user) {
             return res.status(401).json({
                 success: false,
                 message: "Unauthorized",
             });
         }
-
 
         if (!req.file) {
             return res.status(400).json({
@@ -159,16 +154,13 @@ export const createSessionAnswer = async (
             });
         }
 
-
         const { sessionId } =
             req.params;
-
 
         const data =
             createSessionAnswerSchema.parse(
                 req.body
             );
-
 
         const answer =
             await sessionService.createSessionAnswer(
@@ -180,7 +172,6 @@ export const createSessionAnswer = async (
                 data.durationSeconds
             );
 
-
         return res.status(201).json({
             success: true,
             message:
@@ -189,20 +180,21 @@ export const createSessionAnswer = async (
         });
 
     } catch (error) {
-
         next(error);
     }
 };
 
 
-export const deleteSession = async (
+// ============================================
+// SUBMIT SESSION
+// ============================================
+
+export const submitSession = async (
     req: AuthRequest,
     res: Response,
     next: NextFunction
 ) => {
-
     try {
-
         if (!req.user) {
             return res.status(401).json({
                 success: false,
@@ -210,17 +202,53 @@ export const deleteSession = async (
             });
         }
 
-
         const { sessionId } =
             req.params;
 
+        const session =
+            await sessionService.submitSession(
+                req.user.userId,
+                sessionId
+            );
+
+        return res.status(200).json({
+            success: true,
+            message:
+                "Session submitted successfully",
+            data: session,
+        });
+
+    } catch (error) {
+        next(error);
+    }
+};
+
+
+// ============================================
+// DELETE SESSION
+// ============================================
+
+export const deleteSession = async (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized",
+            });
+        }
+
+        const { sessionId } =
+            req.params;
 
         const result =
             await sessionService.deleteSession(
                 req.user.userId,
                 sessionId
             );
-
 
         return res.status(200).json({
             success: true,
@@ -230,8 +258,6 @@ export const deleteSession = async (
         });
 
     } catch (error) {
-
         next(error);
     }
 };
-
