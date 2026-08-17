@@ -1,4 +1,10 @@
-import { index, jsonb, pgTable, timestamp, uuid } from "drizzle-orm/pg-core";
+import {
+    index,
+    jsonb,
+    pgTable,
+    timestamp,
+    uuid,
+} from "drizzle-orm/pg-core";
 
 import { sessions } from "./sessions";
 import { users } from "./users";
@@ -8,12 +14,16 @@ import { reportStatusEnum } from "../enums";
 export const feedbackReports = pgTable(
     "feedback_reports",
     {
-        id: uuid("id").primaryKey().defaultRandom(),
+        id: uuid("id")
+            .primaryKey()
+            .defaultRandom(),
 
         sessionId: uuid("session_id")
             .notNull()
             .unique()
-            .references(() => sessions.id, { onDelete: "cascade" }),
+            .references(() => sessions.id, {
+                onDelete: "cascade",
+            }),
 
         quickSnapshotJson: jsonb("quick_snapshot_json"),
 
@@ -32,7 +42,9 @@ export const feedbackReports = pgTable(
             .notNull()
             .default("ai_reviewed"),
 
-        createdAt: timestamp("created_at", { withTimezone: true })
+        createdAt: timestamp("created_at", {
+            withTimezone: true,
+        })
             .notNull()
             .defaultNow(),
     },
