@@ -2,12 +2,12 @@ import {
     PutObjectCommand,
     DeleteObjectCommand,
     S3Client,
+    GetObjectCommand,
 } from "@aws-sdk/client-s3";
 
 import {
     getSignedUrl,
 } from "@aws-sdk/s3-request-presigner";
-
 
 const s3Client = new S3Client({
     region:
@@ -31,17 +31,14 @@ const s3Client = new S3Client({
     forcePathStyle: true,
 });
 
-
 const bucket =
     process.env.S3_BUCKET_NAME ||
     "mockprep-documents";
-
 
 export const generatePresignedPutUrl = async (
     key: string,
     contentType: string
 ): Promise<string> => {
-
     const command =
         new PutObjectCommand({
             Bucket: bucket,
@@ -58,13 +55,11 @@ export const generatePresignedPutUrl = async (
     );
 };
 
-
 export const uploadAudio = async (
     key: string,
     buffer: Buffer,
     contentType: string
 ): Promise<string> => {
-
     const command =
         new PutObjectCommand({
             Bucket: bucket,
@@ -78,11 +73,9 @@ export const uploadAudio = async (
     return key;
 };
 
-
 export const deleteObject = async (
     key: string
 ): Promise<void> => {
-
     const command =
         new DeleteObjectCommand({
             Bucket: bucket,
@@ -90,4 +83,28 @@ export const deleteObject = async (
         });
 
     await s3Client.send(command);
+};
+
+export const downloadObject = async (
+    key: string
+): Promise<Buffer> => {
+    const command =
+        new GetObjectCommand({
+            Bucket: bucket,
+            Key: key,
+        });
+
+    const response =
+        await s3Client.send(command);
+
+    if (!response.Body) {
+        throw new Error(
+            "Storage object has no body"
+        );
+    }
+
+    const bytes =
+        await response.Body.transformToByteArray();
+
+    return Buffer.from(bytes);
 };

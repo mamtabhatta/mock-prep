@@ -1,13 +1,19 @@
-import { jobQueue } from "../queues/jobQueue";
+import {
+    jobQueue,
+} from "../queues/jobQueue";
+
 
 export const enqueueJob = async (
     name: string,
     data: Record<string, unknown>
 ) => {
-    const job = await jobQueue.add(
-        name,
-        data
-    );
+
+    const job =
+        await jobQueue.add(
+            name,
+            data
+        );
+
 
     return {
         id: job.id,

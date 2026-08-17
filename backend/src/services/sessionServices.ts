@@ -23,7 +23,9 @@ import {
     deleteObject,
 } from "./storageServices";
 
-
+import {
+    enqueueJob,
+} from "./jobServices";
 // ============================================
 // CREATE SESSION
 // ============================================
@@ -166,6 +168,7 @@ export const createSessionAnswer = async (
                 )
             );
 
+
     if (!session) {
         throw new Error(
             "Session not found"
@@ -185,6 +188,7 @@ export const createSessionAnswer = async (
                 )
             );
 
+
     if (!question) {
         throw new Error(
             "Question not found"
@@ -194,8 +198,9 @@ export const createSessionAnswer = async (
 
     // Generate storage key
     const extension =
-        contentType.split("/")[1]
-        || "webm";
+        contentType.split("/")[1] ||
+        "webm";
+
 
     const key =
         `sessions/${sessionId}/answers/${crypto.randomUUID()}.${extension}`;
@@ -209,18 +214,44 @@ export const createSessionAnswer = async (
     );
 
 
-    // Save answer
+    // Create answer
     const [answer] =
         await db
             .insert(sessionAnswers)
             .values({
                 sessionId,
+
                 questionId,
-                recordingUrl: key,
+
+                recordingUrl:
+                    key,
+
                 durationSeconds:
-                    durationSeconds ?? null,
+                    durationSeconds ??
+                    null,
+
+                transcriptionStatus:
+                    "pending",
             })
             .returning();
+
+
+    // Add transcription job
+    await enqueueJob(
+        "transcribe-answer",
+        {
+            answerId:
+                answer.id,
+
+            sessionId,
+
+            recordingUrl:
+                key,
+
+            contentType,
+        }
+    );
+
 
     return answer;
 };

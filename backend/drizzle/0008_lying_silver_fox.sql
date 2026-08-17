@@ -1,0 +1,1 @@
+ALTER TABLE "session_answers" ADD COLUMN "transcription_status" text DEFAULT 'pending' NOT NULL;
