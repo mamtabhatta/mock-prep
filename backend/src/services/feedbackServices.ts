@@ -1,5 +1,9 @@
 import Groq from "groq-sdk";
 import dotenv from "dotenv";
+import { and, desc, eq } from "drizzle-orm";
+
+import { db } from "../db";
+import { prompts } from "../db/schema";
 
 dotenv.config();
 
@@ -44,6 +48,27 @@ export const generateFeedbackWithGroq = async (
         );
     }
 
+    const activePrompt = await db
+        .select()
+        .from(prompts)
+        .where(
+            and(
+                eq(prompts.module, "interview_feedback"),
+                eq(prompts.isActive, true)
+            )
+        )
+        .orderBy(desc(prompts.version))
+        .limit(1);
+
+    if (!activePrompt.length) {
+        throw new Error(
+            "No active prompt found for module: interview_feedback"
+        );
+    }
+
+    const promptContent = activePrompt[0].contentText;
+  
+
     const transcriptText =
         transcripts
             .map(
@@ -62,18 +87,7 @@ ${item.transcript}`
             messages: [
                 {
                     role: "system",
-                    content: `
-You are an expert interview evaluator.
-
-Evaluate the candidate's complete set of answers.
-
-You MUST evaluate all answers together in ONE assessment.
-
-Return only structured JSON matching the supplied schema.
-
-Be fair and constructive.
-Scores must be integers from 0 to 100.
-                    `.trim(),
+                    content: promptContent,
                 },
                 {
                     role: "user",
