@@ -8,6 +8,7 @@ import {
     createSessionAnswer,
     submitSession,
     deleteSession,
+    getAnswerPlaybackUrl,
 } from "../controllers/sessionControllers";
 
 import { authenticate } from "../middlewares/authMiddleware";
@@ -42,6 +43,12 @@ router.get(
     "/:sessionId",
     authenticate,
     getSessionById
+);
+// Generate short-lived answer playback URL
+router.get(
+    "/:sessionId/answers/:answerId/playback",
+    authenticate,
+    getAnswerPlaybackUrl
 );
 
 // Delete session

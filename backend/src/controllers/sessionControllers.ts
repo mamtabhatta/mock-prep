@@ -261,3 +261,42 @@ export const deleteSession = async (
         next(error);
     }
 };
+// ============================================
+// GET ANSWER PLAYBACK URL
+// ============================================
+
+export const getAnswerPlaybackUrl = async (
+    req: AuthRequest,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        if (!req.user) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized",
+            });
+        }
+
+        const {
+            sessionId,
+            answerId,
+        } = req.params;
+
+        const result =
+            await sessionService.getAnswerPlaybackUrl(
+                req.user.userId,
+                sessionId,
+                answerId
+            );
+
+        return res.status(200).json({
+            success: true,
+            message:
+                "Playback URL generated successfully",
+            data: result,
+        });
+    } catch (error) {
+        next(error);
+    }
+};

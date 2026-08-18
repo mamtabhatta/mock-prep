@@ -21,6 +21,7 @@ import {
 import {
     uploadAudio,
     deleteObject,
+     generatePresignedGetUrl,
 } from "./storageServices";
 
 import {
@@ -330,9 +331,6 @@ export const submitSession = async (
 };
 
 
-// ============================================
-// DELETE SESSION
-// ============================================
 
 export const deleteSession = async (
     userId: string,
@@ -377,7 +375,7 @@ export const deleteSession = async (
             );
 
 
-    // Delete recordings from storage
+    
     for (
         const answer of answers
     ) {
@@ -389,12 +387,6 @@ export const deleteSession = async (
             );
         }
     }
-
-
-    // Delete session.
-    // DB cascade deletes:
-    // - session_answers
-    // - feedback_reports
     await db
         .delete(sessions)
         .where(
@@ -408,5 +400,79 @@ export const deleteSession = async (
     return {
         id: sessionId,
         deleted: true,
+    };
+};
+// ============================================
+// GENERATE ANSWER PLAYBACK URL
+// ============================================
+
+export const getAnswerPlaybackUrl = async (
+    userId: string,
+    sessionId: string,
+    answerId: string
+) => {
+    // Check session ownership
+    const [session] =
+        await db
+            .select()
+            .from(sessions)
+            .where(
+                and(
+                    eq(
+                        sessions.id,
+                        sessionId
+                    ),
+                    eq(
+                        sessions.userId,
+                        userId
+                    )
+                )
+            );
+
+    if (!session) {
+        throw new Error(
+            "Session not found"
+        );
+    }
+
+    // Find answer belonging to this session
+    const [answer] =
+        await db
+            .select()
+            .from(sessionAnswers)
+            .where(
+                and(
+                    eq(
+                        sessionAnswers.id,
+                        answerId
+                    ),
+                    eq(
+                        sessionAnswers.sessionId,
+                        sessionId
+                    )
+                )
+            );
+
+    if (!answer) {
+        throw new Error(
+            "Answer not found"
+        );
+    }
+
+    if (!answer.recordingUrl) {
+        throw new Error(
+            "Recording not found"
+        );
+    }
+
+    // Generate short-lived playback URL
+    const playbackUrl =
+        await generatePresignedGetUrl(
+            answer.recordingUrl
+        );
+
+    return {
+        playbackUrl,
+        expiresIn: 300,
     };
 };

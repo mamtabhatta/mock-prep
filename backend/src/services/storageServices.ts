@@ -149,3 +149,24 @@ export const downloadObject = async (
 
     return Buffer.from(bytes);
 };
+// ============================================
+// GENERATE PRESIGNED GET URL
+// ============================================
+
+export const generatePresignedGetUrl = async (
+    key: string
+): Promise<string> => {
+    const command =
+        new GetObjectCommand({
+            Bucket: bucket,
+            Key: key,
+        });
+
+    return await getSignedUrl(
+        s3Client,
+        command,
+        {
+            expiresIn:300,
+        }
+    );
+};
