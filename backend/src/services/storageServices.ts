@@ -1,3 +1,7 @@
+import dotenv from "dotenv";
+
+dotenv.config();
+
 import {
     PutObjectCommand,
     DeleteObjectCommand,
@@ -9,8 +13,14 @@ import {
     getSignedUrl,
 } from "@aws-sdk/s3-request-presigner";
 
+
+// ============================================
+// S3 / MINIO CLIENT
+// ============================================
+
 const s3Client = new S3Client({
     region:
+        process.env.S3_REGION ||
         process.env.AWS_REGION ||
         "us-east-1",
 
@@ -20,25 +30,38 @@ const s3Client = new S3Client({
 
     credentials: {
         accessKeyId:
+            process.env.S3_ACCESS_KEY_ID ||
             process.env.AWS_ACCESS_KEY_ID ||
-            "minioadmin",
+            "minio",
 
         secretAccessKey:
+            process.env.S3_SECRET_ACCESS_KEY ||
             process.env.AWS_SECRET_ACCESS_KEY ||
-            "minioadmin",
+            "minio123",
     },
 
     forcePathStyle: true,
 });
 
+
+// ============================================
+// BUCKET
+// ============================================
+
 const bucket =
     process.env.S3_BUCKET_NAME ||
     "mockprep-documents";
+
+
+// ============================================
+// GENERATE PRESIGNED PUT URL
+// ============================================
 
 export const generatePresignedPutUrl = async (
     key: string,
     contentType: string
 ): Promise<string> => {
+
     const command =
         new PutObjectCommand({
             Bucket: bucket,
@@ -55,11 +78,17 @@ export const generatePresignedPutUrl = async (
     );
 };
 
+
+// ============================================
+// UPLOAD OBJECT
+// ============================================
+
 export const uploadAudio = async (
     key: string,
     buffer: Buffer,
     contentType: string
 ): Promise<string> => {
+
     const command =
         new PutObjectCommand({
             Bucket: bucket,
@@ -73,9 +102,15 @@ export const uploadAudio = async (
     return key;
 };
 
+
+// ============================================
+// DELETE OBJECT
+// ============================================
+
 export const deleteObject = async (
     key: string
 ): Promise<void> => {
+
     const command =
         new DeleteObjectCommand({
             Bucket: bucket,
@@ -85,9 +120,15 @@ export const deleteObject = async (
     await s3Client.send(command);
 };
 
+
+// ============================================
+// DOWNLOAD OBJECT
+// ============================================
+
 export const downloadObject = async (
     key: string
 ): Promise<Buffer> => {
+
     const command =
         new GetObjectCommand({
             Bucket: bucket,
