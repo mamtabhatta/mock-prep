@@ -7,6 +7,8 @@ import sessionRoutes from "./sessionRoutes";
 import universityRoutes from "./universityRoutes";
 import courseRoutes from "./courseRoutes";
 import questionSetRoutes from "./questionSetRoutes";
+import questionRoutes from "./questionRoutes";
+import promptRoutes from "./promptRoutes";
 const router = Router();
 
 
@@ -18,6 +20,8 @@ router.use("/sessions", sessionRoutes);
 router.use("/", universityRoutes);
 router.use("/", courseRoutes);
 router.use("/", questionSetRoutes);
+router.use("/", questionRoutes);
+router.use("/", promptRoutes);
 router.get("/health", (req, res) => {
   res.status(200).json({
     success: true,
