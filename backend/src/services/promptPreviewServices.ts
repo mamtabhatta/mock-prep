@@ -114,25 +114,10 @@ ${data.transcript.trim()}
         );
     }
 
-    let output: {
-        summary: string;
-        strengths: string[];
-        weaknesses: string[];
-        recommendations: string[];
-    };
-
-    try {
-        output = JSON.parse(content);
-    } catch {
-        throw new Error(
-            "Groq returned an invalid JSON preview response"
-        );
-    }
-
     return {
         promptId: prompt.id,
         version: prompt.version,
         module: prompt.module,
-        output,
+        output: content,
     };
 };
