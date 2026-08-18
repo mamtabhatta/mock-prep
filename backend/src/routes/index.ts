@@ -9,6 +9,7 @@ import courseRoutes from "./courseRoutes";
 import questionSetRoutes from "./questionSetRoutes";
 import questionRoutes from "./questionRoutes";
 import promptRoutes from "./promptRoutes";
+import promptPreviewRoutes from "./promptPreviewRoutes";
 const router = Router();
 
 
@@ -22,6 +23,7 @@ router.use("/", courseRoutes);
 router.use("/", questionSetRoutes);
 router.use("/", questionRoutes);
 router.use("/", promptRoutes);
+router.use("/", promptPreviewRoutes);
 router.get("/health", (req, res) => {
   res.status(200).json({
     success: true,
