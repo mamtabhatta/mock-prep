@@ -1,6 +1,17 @@
 import { Response } from "express";
 import { AuthRequest } from "../middlewares/authMiddleware";
-import { getAdminUsersService, getAdminUserDetailService, } from "../services/adminUserServices";
+import {
+    getAdminUserDetailService,
+    getAdminUsersService,
+    updateAdminUserRoleService,
+    updateAdminUserSuspensionService,
+}
+    from "../services/adminUserServices";
+
+import {
+    updateUserRoleSchema,
+    updateUserSuspensionSchema,
+} from "../validations/authValidation";
 
 export const getAdminUsers = async (
     req: AuthRequest,
@@ -138,6 +149,138 @@ export const getAdminUserDetail = async (
             data: result,
         });
     } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};
+export const updateAdminUserRole = async (
+    req: AuthRequest,
+    res: Response
+) => {
+    try {
+        const adminId = req.user?.userId;
+
+        if (!adminId) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized",
+            });
+        }
+
+        const { userId } = req.params;
+
+        if (!userId) {
+            return res.status(400).json({
+                success: false,
+                message: "User ID is required",
+            });
+        }
+
+        if (adminId === userId) {
+            return res.status(400).json({
+                success: false,
+                message: "You cannot change your own role",
+            });
+        }
+
+        const data = updateUserRoleSchema.parse(req.body);
+
+        const updatedUser = await updateAdminUserRoleService(
+            userId,
+            data.role
+        );
+
+        if (!updatedUser) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: "User role updated successfully",
+            data: updatedUser,
+        });
+    } catch (error: any) {
+        if (error.name === "ZodError") {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid role",
+                errors: error.errors,
+            });
+        }
+
+        return res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};
+
+export const updateAdminUserSuspension = async (
+    req: AuthRequest,
+    res: Response
+) => {
+    try {
+        const adminId = req.user?.userId;
+
+        if (!adminId) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized",
+            });
+        }
+
+        const { userId } = req.params;
+
+        if (!userId) {
+            return res.status(400).json({
+                success: false,
+                message: "User ID is required",
+            });
+        }
+
+        if (adminId === userId) {
+            return res.status(400).json({
+                success: false,
+                message: "You cannot suspend yourself",
+            });
+        }
+
+        const data = updateUserSuspensionSchema.parse(req.body);
+
+        const updatedUser =
+            await updateAdminUserSuspensionService(
+                userId,
+                data.is_suspended
+            );
+
+        if (!updatedUser) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            message: data.is_suspended
+                ? "User suspended successfully"
+                : "User reactivated successfully",
+            data: updatedUser,
+        });
+    } catch (error: any) {
+        if (error.name === "ZodError") {
+            return res.status(400).json({
+                success: false,
+                message: "Invalid suspension value",
+                errors: error.errors,
+            });
+        }
+
         return res.status(500).json({
             success: false,
             message: error.message,

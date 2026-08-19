@@ -4,8 +4,9 @@ import { authorize } from "../middlewares/roleMiddleware";
 import {
     getAdminUserDetail,
     getAdminUsers,
-}
-    from "../controllers/adminUserControllers";
+    updateAdminUserRole,
+    updateAdminUserSuspension,
+} from "../controllers/adminUserControllers";
 
 const router = Router();
 
@@ -20,6 +21,19 @@ router.get(
     authenticate,
     authorize("super_admin"),
     getAdminUserDetail
+);
+router.patch(
+    "/users/:userId/role",
+    authenticate,
+    authorize("super_admin"),
+    updateAdminUserRole
+);
+
+router.patch(
+    "/users/:userId/suspension",
+    authenticate,
+    authorize("super_admin"),
+    updateAdminUserSuspension
 );
 
 export default router;

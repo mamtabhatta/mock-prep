@@ -160,3 +160,48 @@ export const getAdminUserDetailService = async (userId: string) => {
         reports,
     };
 };
+export const updateAdminUserRoleService = async (
+    userId: string,
+    role: "student" | "counselor" | "super_admin"
+) => {
+    const [updatedUser] = await db
+        .update(users)
+        .set({
+            role,
+            updatedAt: new Date(),
+        })
+        .where(eq(users.id, userId))
+        .returning({
+            id: users.id,
+            email: users.email,
+            fullName: users.fullName,
+            role: users.role,
+            isSuspended: users.isSuspended,
+            updatedAt: users.updatedAt,
+        });
+
+    return updatedUser || null;
+};
+
+export const updateAdminUserSuspensionService = async (
+    userId: string,
+    isSuspended: boolean
+) => {
+    const [updatedUser] = await db
+        .update(users)
+        .set({
+            isSuspended,
+            updatedAt: new Date(),
+        })
+        .where(eq(users.id, userId))
+        .returning({
+            id: users.id,
+            email: users.email,
+            fullName: users.fullName,
+            role: users.role,
+            isSuspended: users.isSuspended,
+            updatedAt: users.updatedAt,
+        });
+
+    return updatedUser || null;
+};

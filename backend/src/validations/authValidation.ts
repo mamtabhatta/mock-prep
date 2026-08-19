@@ -43,3 +43,15 @@ export type ForgotPasswordInput = z.infer<typeof forgotPasswordSchema>;
 export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
+export const updateUserRoleSchema = z.object({
+    role: z.enum(["student", "counselor", "super_admin"]),
+});
+
+export const updateUserSuspensionSchema = z.object({
+    is_suspended: z.boolean(),
+});
+
+export type UpdateUserRoleInput = z.infer<typeof updateUserRoleSchema>;
+export type UpdateUserSuspensionInput = z.infer<
+    typeof updateUserSuspensionSchema
+>;
