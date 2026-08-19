@@ -1,6 +1,6 @@
 import { Response } from "express";
 import { AuthRequest } from "../middlewares/authMiddleware";
-import { getAdminUsersService } from "../services/adminUserServices";
+import { getAdminUsersService, getAdminUserDetailService, } from "../services/adminUserServices";
 
 export const getAdminUsers = async (
     req: AuthRequest,
@@ -93,6 +93,49 @@ export const getAdminUsers = async (
             success: true,
             data: result.users,
             pagination: result.pagination,
+        });
+    } catch (error: any) {
+        return res.status(500).json({
+            success: false,
+            message: error.message,
+        });
+    }
+};
+export const getAdminUserDetail = async (
+    req: AuthRequest,
+    res: Response
+) => {
+    try {
+        const adminId = req.user?.userId;
+
+        if (!adminId) {
+            return res.status(401).json({
+                success: false,
+                message: "Unauthorized",
+            });
+        }
+
+        const { userId } = req.params;
+
+        if (!userId) {
+            return res.status(400).json({
+                success: false,
+                message: "User ID is required",
+            });
+        }
+
+        const result = await getAdminUserDetailService(userId);
+
+        if (!result) {
+            return res.status(404).json({
+                success: false,
+                message: "User not found",
+            });
+        }
+
+        return res.status(200).json({
+            success: true,
+            data: result,
         });
     } catch (error: any) {
         return res.status(500).json({

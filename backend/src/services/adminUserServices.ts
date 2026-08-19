@@ -1,6 +1,8 @@
 import { and, count, eq, ilike, ne, or } from "drizzle-orm";
 import { db } from "../db";
 import { users } from "../db/schema/users";
+import { feedbackReports } from "../db/schema/feedbackReports";
+import { sessions } from "../db/schema/sessions";
 
 interface GetAdminUsersParams {
     currentUserId: string;
@@ -21,7 +23,7 @@ export const getAdminUsersService = async ({
 }: GetAdminUsersParams) => {
     const conditions = [];
 
-    // Exclude the currently logged-in admin
+
     conditions.push(ne(users.id, currentUserId));
 
     if (search) {
@@ -79,5 +81,82 @@ export const getAdminUsersService = async ({
             total,
             totalPages,
         },
+    };
+};
+export const getAdminUserDetailService = async (userId: string) => {
+    const [user] = await db
+        .select({
+            id: users.id,
+            email: users.email,
+            fullName: users.fullName,
+            role: users.role,
+            isEmailVerified: users.isEmailVerified,
+            isSuspended: users.isSuspended,
+            createdAt: users.createdAt,
+            updatedAt: users.updatedAt,
+        })
+        .from(users)
+        .where(eq(users.id, userId))
+        .limit(1);
+
+    if (!user) {
+        return null;
+    }
+
+    const userSessions = await db
+        .select({
+            id: sessions.id,
+            userId: sessions.userId,
+            module: sessions.module,
+            universityId: sessions.universityId,
+            courseId: sessions.courseId,
+            questionSetId: sessions.questionSetId,
+            status: sessions.status,
+            startedAt: sessions.startedAt,
+            submittedAt: sessions.submittedAt,
+            scoredAt: sessions.scoredAt,
+            createdAt: sessions.createdAt,
+        })
+        .from(sessions)
+        .where(eq(sessions.userId, userId));
+
+    const sessionIds = userSessions.map((session) => session.id);
+
+    const reports =
+        sessionIds.length > 0
+            ? await db
+                .select({
+                    id: feedbackReports.id,
+                    sessionId: feedbackReports.sessionId,
+                    quickSnapshotJson:
+                        feedbackReports.quickSnapshotJson,
+                    deepReportJson:
+                        feedbackReports.deepReportJson,
+                    scoresJson: feedbackReports.scoresJson,
+                    aiFeedbackJson:
+                        feedbackReports.aiFeedbackJson,
+                    counselorFeedbackJson:
+                        feedbackReports.counselorFeedbackJson,
+                    reviewedBy: feedbackReports.reviewedBy,
+                    status: feedbackReports.status,
+                    createdAt: feedbackReports.createdAt,
+                })
+                .from(feedbackReports)
+                .where(
+                    or(
+                        ...sessionIds.map((sessionId) =>
+                            eq(
+                                feedbackReports.sessionId,
+                                sessionId
+                            )
+                        )
+                    )
+                )
+            : [];
+
+    return {
+        user,
+        sessions: userSessions,
+        reports,
     };
 };

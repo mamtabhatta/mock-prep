@@ -1,7 +1,11 @@
 import { Router } from "express";
 import { authenticate } from "../middlewares/authMiddleware";
 import { authorize } from "../middlewares/roleMiddleware";
-import { getAdminUsers } from "../controllers/adminUserControllers";
+import {
+    getAdminUserDetail,
+    getAdminUsers,
+}
+    from "../controllers/adminUserControllers";
 
 const router = Router();
 
@@ -10,6 +14,12 @@ router.get(
     authenticate,
     authorize("super_admin"),
     getAdminUsers
+);
+router.get(
+    "/users/:userId",
+    authenticate,
+    authorize("super_admin"),
+    getAdminUserDetail
 );
 
 export default router;
