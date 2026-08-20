@@ -21,12 +21,17 @@ import {
 import {
     uploadAudio,
     deleteObject,
-     generatePresignedGetUrl,
+    generatePresignedGetUrl,
 } from "./storageServices";
 
 import {
     enqueueJob,
 } from "./jobServices";
+
+import {
+    recordAnalyticsEvent,
+} from "./analyticsServices";
+
 // ============================================
 // CREATE SESSION
 // ============================================
@@ -35,20 +40,26 @@ export const createSession = async (
     userId: string,
     data: CreateSessionInput
 ) => {
-    const [session] =
-        await db
-            .insert(sessions)
-            .values({
-                userId,
-                module: data.module,
-                universityId:
-                    data.universityId ?? null,
-                courseId:
-                    data.courseId ?? null,
-                questionSetId:
-                    data.questionSetId ?? null,
-            })
-            .returning();
+    const [session] = await db
+        .insert(sessions)
+        .values({
+            userId,
+            module: data.module,
+            universityId: data.universityId ?? null,
+            courseId: data.courseId ?? null,
+            questionSetId: data.questionSetId ?? null,
+        })
+        .returning();
+
+    // Record analytics event
+    await recordAnalyticsEvent({
+        userId,
+        sessionId: session.id,
+        eventType: "session_started",
+        metadata: {
+            module: session.module,
+        },
+    });
 
     return session;
 };
@@ -169,13 +180,11 @@ export const createSessionAnswer = async (
                 )
             );
 
-
     if (!session) {
         throw new Error(
             "Session not found"
         );
     }
-
 
     // Check question
     const [question] =
@@ -189,23 +198,19 @@ export const createSessionAnswer = async (
                 )
             );
 
-
     if (!question) {
         throw new Error(
             "Question not found"
         );
     }
 
-
     // Generate storage key
     const extension =
         contentType.split("/")[1] ||
         "webm";
 
-
     const key =
         `sessions/${sessionId}/answers/${crypto.randomUUID()}.${extension}`;
-
 
     // Upload audio
     await uploadAudio(
@@ -213,7 +218,6 @@ export const createSessionAnswer = async (
         audioBuffer,
         contentType
     );
-
 
     // Create answer
     const [answer] =
@@ -236,7 +240,6 @@ export const createSessionAnswer = async (
             })
             .returning();
 
-
     // Add transcription job
     await enqueueJob(
         "transcribe-answer",
@@ -252,7 +255,6 @@ export const createSessionAnswer = async (
             contentType,
         }
     );
-
 
     return answer;
 };
@@ -291,7 +293,6 @@ export const submitSession = async (
         );
     }
 
-
     // Only an in-progress session
     // can be submitted.
     if (
@@ -302,7 +303,6 @@ export const submitSession = async (
             "Session cannot be submitted"
         );
     }
-
 
     // Update status
     const [updatedSession] =
@@ -327,10 +327,23 @@ export const submitSession = async (
             )
             .returning();
 
+    // Record analytics event
+    await recordAnalyticsEvent({
+        userId,
+        sessionId,
+        eventType: "session_completed",
+        metadata: {
+            module: updatedSession.module,
+        },
+    });
+
     return updatedSession;
 };
 
 
+// ============================================
+// DELETE SESSION
+// ============================================
 
 export const deleteSession = async (
     userId: string,
@@ -361,7 +374,6 @@ export const deleteSession = async (
         );
     }
 
-
     // Get answers before cascade deletion
     const answers =
         await db
@@ -374,8 +386,6 @@ export const deleteSession = async (
                 )
             );
 
-
-    
     for (
         const answer of answers
     ) {
@@ -387,6 +397,7 @@ export const deleteSession = async (
             );
         }
     }
+
     await db
         .delete(sessions)
         .where(
@@ -396,12 +407,13 @@ export const deleteSession = async (
             )
         );
 
-
     return {
         id: sessionId,
         deleted: true,
     };
 };
+
+
 // ============================================
 // GENERATE ANSWER PLAYBACK URL
 // ============================================
