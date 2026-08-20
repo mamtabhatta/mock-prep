@@ -11,6 +11,7 @@ import questionRoutes from "./questionRoutes";
 import promptRoutes from "./promptRoutes";
 import promptPreviewRoutes from "./promptPreviewRoutes";
 import adminUserRoutes from "./adminUserRoutes";
+import adminAnalyticsRoutes from "./adminAnalyticsRoutes";
 
 const router = Router();
 
@@ -27,6 +28,8 @@ router.use("/", questionRoutes);
 router.use("/", promptRoutes);
 router.use("/", promptPreviewRoutes);
 router.use("/admin", adminUserRoutes);
+router.use("/admin/analytics", adminAnalyticsRoutes);
+
 
 router.get("/health", (req, res) => {
   res.status(200).json({
