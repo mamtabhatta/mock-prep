@@ -12,6 +12,8 @@ import {
 } from "../controllers/sessionControllers";
 
 import { authenticate } from "../middlewares/authMiddleware";
+import { aiRateLimiter } from "../middlewares/aiRateLimitMiddleware";
+import { aiUserQuota } from "../middlewares/aiQuotaMiddleware";
 
 const router = Router();
 
@@ -35,6 +37,8 @@ router.get(
 router.post(
     "/:sessionId/submit",
     authenticate,
+    aiRateLimiter,
+    aiUserQuota,
     submitSession
 );
 
