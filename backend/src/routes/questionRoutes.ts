@@ -1,5 +1,6 @@
 import { Router } from "express";
 import multer from "multer";
+
 import {
     createQuestion,
     getAllQuestions,
@@ -8,8 +9,17 @@ import {
     deleteQuestion,
     bulkImportQuestions,
 } from "../controllers/questionControllers";
+
 import { authenticate } from "../middlewares/authMiddleware";
 import { authorize } from "../middlewares/roleMiddleware";
+import { validate } from "../middlewares/validate";
+
+import { questionIdParamSchema } from "../validations/commonValidation";
+
+import {
+    createQuestionSchema,
+    updateQuestionSchema,
+} from "../validations/questionValidation";
 
 const router = Router();
 
@@ -24,6 +34,9 @@ router.post(
     "/questions",
     authenticate,
     authorize("super_admin"),
+    validate({
+        body: createQuestionSchema,
+    }),
     createQuestion
 );
 
@@ -36,6 +49,9 @@ router.get(
 router.get(
     "/questions/:questionId",
     authenticate,
+    validate({
+        params: questionIdParamSchema,
+    }),
     getQuestion
 );
 
@@ -43,6 +59,10 @@ router.patch(
     "/questions/:questionId",
     authenticate,
     authorize("super_admin"),
+    validate({
+        params: questionIdParamSchema,
+        body: updateQuestionSchema,
+    }),
     updateQuestion
 );
 
@@ -50,6 +70,9 @@ router.delete(
     "/questions/:questionId",
     authenticate,
     authorize("super_admin"),
+    validate({
+        params: questionIdParamSchema,
+    }),
     deleteQuestion
 );
 

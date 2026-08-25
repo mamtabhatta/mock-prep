@@ -12,17 +12,34 @@ import {
 } from "../controllers/sessionControllers";
 
 import { authenticate } from "../middlewares/authMiddleware";
+import { validate } from "../middlewares/validate";
+
+import {
+    createSessionSchema,
+    createSessionAnswerSchema,
+} from "../validations/sessionValidation";
+
+import {
+    sessionIdParamSchema,
+    answerIdParamSchema,
+} from "../validations/commonValidation";
+
 import { aiRateLimiter } from "../middlewares/aiRateLimitMiddleware";
 import { aiUserQuota } from "../middlewares/aiQuotaMiddleware";
 
 const router = Router();
 
-const upload = multer();
+const upload = multer({
+    storage: multer.memoryStorage(),
+});
 
 // Create session
 router.post(
     "/",
     authenticate,
+    validate({
+        body: createSessionSchema,
+    }),
     createSession
 );
 
@@ -33,10 +50,13 @@ router.get(
     getUserSessions
 );
 
-// Submit session
+// Submit session — AI endpoint
 router.post(
     "/:sessionId/submit",
     authenticate,
+    validate({
+        params: sessionIdParamSchema,
+    }),
     aiRateLimiter,
     aiUserQuota,
     submitSession
@@ -46,12 +66,19 @@ router.post(
 router.get(
     "/:sessionId",
     authenticate,
+    validate({
+        params: sessionIdParamSchema,
+    }),
     getSessionById
 );
+
 // Generate short-lived answer playback URL
 router.get(
     "/:sessionId/answers/:answerId/playback",
     authenticate,
+    validate({
+        params: answerIdParamSchema,
+    }),
     getAnswerPlaybackUrl
 );
 
@@ -59,6 +86,9 @@ router.get(
 router.delete(
     "/:sessionId",
     authenticate,
+    validate({
+        params: sessionIdParamSchema,
+    }),
     deleteSession
 );
 
@@ -66,7 +96,13 @@ router.delete(
 router.post(
     "/:sessionId/answers",
     authenticate,
+    validate({
+        params: sessionIdParamSchema,
+    }),
     upload.single("audio"),
+    validate({
+        body: createSessionAnswerSchema,
+    }),
     createSessionAnswer
 );
 
