@@ -15,7 +15,6 @@ import adminAnalyticsRoutes from "./adminAnalyticsRoutes";
 
 const router = Router();
 
-
 router.use("/auth", authRoutes);
 router.use("/", contentRoutes);
 router.use("/users", userRoutes);
@@ -30,11 +29,17 @@ router.use("/", promptPreviewRoutes);
 router.use("/admin", adminUserRoutes);
 router.use("/admin/analytics", adminAnalyticsRoutes);
 
-
 router.get("/health", (req, res) => {
   res.status(200).json({
     success: true,
     message: "API is running",
+  });
+});
+
+router.get("/ready", (req, res) => {
+  res.status(200).json({
+    success: true,
+    message: "API is ready",
   });
 });
 
