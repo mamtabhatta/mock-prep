@@ -14,7 +14,11 @@ import {
     prompts,
 } from "../../db/schema";
 
-import { eq, inArray } from "drizzle-orm";
+import {
+    eq,
+    inArray,
+    desc,
+} from "drizzle-orm";
 
 describe("7.7 Admin Content, Prompt, CSV and Preview Flows", () => {
     let adminId: string;
@@ -29,6 +33,9 @@ describe("7.7 Admin Content, Prompt, CSV and Preview Flows", () => {
 
     let promptV1Id: string;
     let promptV2Id: string;
+
+    let previewPromptId: string;
+    let createdPreviewPrompt = false;
 
     const JWT_SECRET = process.env.JWT_ACCESS_SECRET!;
 
@@ -68,6 +75,61 @@ describe("7.7 Admin Content, Prompt, CSV and Preview Flows", () => {
                 expiresIn: "1h",
             }
         );
+
+        /*
+         * Ensure an active prompt exists for prompt preview.
+         * Reuse an existing active prompt when available.
+         */
+        const existingActivePrompt = await db
+            .select()
+            .from(prompts)
+            .where(
+                eq(
+                    prompts.module,
+                    "interview_feedback"
+                )
+            )
+            .orderBy(desc(prompts.version))
+            .limit(1);
+
+        if (existingActivePrompt.length > 0) {
+            previewPromptId =
+                existingActivePrompt[0].id;
+
+            /*
+             * Make sure the reused prompt is active.
+             */
+            if (!existingActivePrompt[0].isActive) {
+                await db
+                    .update(prompts)
+                    .set({
+                        isActive: true,
+                    })
+                    .where(
+                        eq(
+                            prompts.id,
+                            previewPromptId
+                        )
+                    );
+            }
+        } else {
+            const [previewPrompt] = await db
+                .insert(prompts)
+                .values({
+                    module: "interview_feedback",
+                    version: 1,
+                    contentText:
+                        "Evaluate the interview response and provide useful feedback.",
+                    isActive: true,
+                    createdBy: adminId,
+                })
+                .returning();
+
+            previewPromptId =
+                previewPrompt.id;
+
+            createdPreviewPrompt = true;
+        }
     });
 
     afterAll(async () => {
@@ -106,7 +168,10 @@ describe("7.7 Admin Content, Prompt, CSV and Preview Flows", () => {
             await db
                 .delete(courses)
                 .where(
-                    eq(courses.id, courseId)
+                    eq(
+                        courses.id,
+                        courseId
+                    )
                 );
         }
 
@@ -117,23 +182,39 @@ describe("7.7 Admin Content, Prompt, CSV and Preview Flows", () => {
             await db
                 .delete(universities)
                 .where(
-                    eq(universities.id, universityId)
+                    eq(
+                        universities.id,
+                        universityId
+                    )
                 );
         }
 
         /*
-         * Delete test prompts
+         * Delete only prompts created by this test
          */
-        await db
-            .delete(prompts)
-            .where(
-                inArray(
-                    prompts.id,
-                    [promptV1Id, promptV2Id].filter(
-                        Boolean
+        const promptIds = [
+            promptV1Id,
+            promptV2Id,
+            ...(createdPreviewPrompt
+                ? [previewPromptId]
+                : []),
+        ].filter(
+            (
+                id
+            ): id is string =>
+                Boolean(id)
+        );
+
+        if (promptIds.length > 0) {
+            await db
+                .delete(prompts)
+                .where(
+                    inArray(
+                        prompts.id,
+                        promptIds
                     )
-                )
-            );
+                );
+        }
 
         /*
          * Delete admin
@@ -141,7 +222,12 @@ describe("7.7 Admin Content, Prompt, CSV and Preview Flows", () => {
         if (adminId) {
             await db
                 .delete(users)
-                .where(eq(users.id, adminId));
+                .where(
+                    eq(
+                        users.id,
+                        adminId
+                    )
+                );
         }
 
         await pool.end();
@@ -169,9 +255,12 @@ describe("7.7 Admin Content, Prompt, CSV and Preview Flows", () => {
 
             expect(res.status).toBe(201);
             expect(res.body.success).toBe(true);
-            expect(res.body.data).toHaveProperty("id");
+            expect(
+                res.body.data
+            ).toHaveProperty("id");
 
-            universityId = res.body.data.id;
+            universityId =
+                res.body.data.id;
         });
 
         it("should update the university", async () => {
@@ -189,7 +278,9 @@ describe("7.7 Admin Content, Prompt, CSV and Preview Flows", () => {
 
             expect(res.status).toBe(200);
             expect(res.body.success).toBe(true);
-            expect(res.body.data.name).toBe(
+            expect(
+                res.body.data.name
+            ).toBe(
                 "7.7 Updated University"
             );
         });
@@ -209,11 +300,6 @@ describe("7.7 Admin Content, Prompt, CSV and Preview Flows", () => {
         });
 
         it("should delete the university", async () => {
-            /*
-             * Reactivate/update may not be necessary depending
-             * on service implementation. This test verifies
-             * the endpoint itself.
-             */
             const res = await request(app)
                 .delete(
                     `/api/v1/universities/${universityId}`
@@ -223,7 +309,9 @@ describe("7.7 Admin Content, Prompt, CSV and Preview Flows", () => {
                     `Bearer ${token}`
                 );
 
-            expect([200, 204]).toContain(
+            expect(
+                [200, 204]
+            ).toContain(
                 res.status
             );
 
@@ -239,16 +327,20 @@ describe("7.7 Admin Content, Prompt, CSV and Preview Flows", () => {
 
     describe("Course CRUD", () => {
         beforeAll(async () => {
-            const [university] = await db
-                .insert(universities)
-                .values({
-                    name: `7.7 Course University ${Date.now()}`,
-                    country: "Nepal",
-                    isActive: true,
-                })
-                .returning();
+            const [university] =
+                await db
+                    .insert(
+                        universities
+                    )
+                    .values({
+                        name: `7.7 Course University ${Date.now()}`,
+                        country: "Nepal",
+                        isActive: true,
+                    })
+                    .returning();
 
-            universityId = university.id;
+            universityId =
+                university.id;
         });
 
         it("should create a course", async () => {
@@ -267,9 +359,12 @@ describe("7.7 Admin Content, Prompt, CSV and Preview Flows", () => {
 
             expect(res.status).toBe(201);
             expect(res.body.success).toBe(true);
-            expect(res.body.data).toHaveProperty("id");
+            expect(
+                res.body.data
+            ).toHaveProperty("id");
 
-            courseId = res.body.data.id;
+            courseId =
+                res.body.data.id;
         });
 
         it("should update the course", async () => {
@@ -312,16 +407,16 @@ describe("7.7 Admin Content, Prompt, CSV and Preview Flows", () => {
 
     describe("Question Set CRUD", () => {
         beforeAll(async () => {
-            /*
-             * Course must be active for question set creation
-             */
             await db
                 .update(courses)
                 .set({
                     isActive: true,
                 })
                 .where(
-                    eq(courses.id, courseId)
+                    eq(
+                        courses.id,
+                        courseId
+                    )
                 );
         });
 
@@ -341,7 +436,9 @@ describe("7.7 Admin Content, Prompt, CSV and Preview Flows", () => {
 
             expect(res.status).toBe(201);
             expect(res.body.success).toBe(true);
-            expect(res.body.data).toHaveProperty("id");
+            expect(
+                res.body.data
+            ).toHaveProperty("id");
 
             questionSetId =
                 res.body.data.id;
@@ -434,7 +531,9 @@ describe("7.7 Admin Content, Prompt, CSV and Preview Flows", () => {
 
             expect(res.status).toBe(200);
             expect(res.body.success).toBe(true);
-            expect(res.body.data.text).toBe(
+            expect(
+                res.body.data.text
+            ).toBe(
                 "7.7 Updated Question One"
             );
         });
@@ -550,13 +649,39 @@ describe("7.7 Admin Content, Prompt, CSV and Preview Flows", () => {
 
             expect(res.status).toBe(201);
             expect(res.body.success).toBe(true);
-            expect(res.body.data.version).toBe(1);
+
+            expect(
+                res.body.data.version
+            ).toBeGreaterThan(0);
 
             promptV1Id =
                 res.body.data.id;
         });
 
         it("should create prompt version 2", async () => {
+            const firstVersionRes =
+                await request(app)
+                    .get(
+                        "/api/v1/prompts/module/ielts_speaking"
+                    );
+
+            expect(
+                firstVersionRes.status
+            ).toBe(200);
+
+            const existingVersions =
+                firstVersionRes.body.data.map(
+                    (prompt: any) =>
+                        prompt.version
+                );
+
+            const maxBefore =
+                existingVersions.length > 0
+                    ? Math.max(
+                        ...existingVersions
+                    )
+                    : 0;
+
             const res = await request(app)
                 .post("/api/v1/prompts")
                 .send({
@@ -567,7 +692,10 @@ describe("7.7 Admin Content, Prompt, CSV and Preview Flows", () => {
 
             expect(res.status).toBe(201);
             expect(res.body.success).toBe(true);
-            expect(res.body.data.version).toBe(2);
+
+            expect(
+                res.body.data.version
+            ).toBe(maxBefore + 1);
 
             promptV2Id =
                 res.body.data.id;
@@ -586,13 +714,21 @@ describe("7.7 Admin Content, Prompt, CSV and Preview Flows", () => {
                 res.body.data.length
             ).toBeGreaterThanOrEqual(2);
 
-            const versions =
-                res.body.data.map(
-                    (p: any) => p.version
-                );
+            expect(
+                res.body.data.some(
+                    (p: any) =>
+                        p.id ===
+                        promptV1Id
+                )
+            ).toBe(true);
 
-            expect(versions).toContain(1);
-            expect(versions).toContain(2);
+            expect(
+                res.body.data.some(
+                    (p: any) =>
+                        p.id ===
+                        promptV2Id
+                )
+            ).toBe(true);
         });
 
         it("should activate prompt version 2", async () => {
@@ -613,12 +749,12 @@ describe("7.7 Admin Content, Prompt, CSV and Preview Flows", () => {
 
             expect(res.status).toBe(200);
             expect(res.body.success).toBe(true);
-            expect(res.body.data.id).toBe(
-                promptV2Id
-            );
-            expect(res.body.data.isActive).toBe(
-                true
-            );
+            expect(
+                res.body.data.id
+            ).toBe(promptV2Id);
+            expect(
+                res.body.data.isActive
+            ).toBe(true);
         });
 
         it("should rollback to version 1", async () => {
@@ -639,12 +775,12 @@ describe("7.7 Admin Content, Prompt, CSV and Preview Flows", () => {
 
             expect(res.status).toBe(200);
             expect(res.body.success).toBe(true);
-            expect(res.body.data.id).toBe(
-                promptV1Id
-            );
-            expect(res.body.data.isActive).toBe(
-                true
-            );
+            expect(
+                res.body.data.id
+            ).toBe(promptV1Id);
+            expect(
+                res.body.data.isActive
+            ).toBe(true);
         });
     });
 
@@ -658,6 +794,10 @@ describe("7.7 Admin Content, Prompt, CSV and Preview Flows", () => {
         it("should return a usable AI preview result", async () => {
             const res = await request(app)
                 .post("/api/v1/prompts/preview")
+                .set(
+                    "Authorization",
+                    `Bearer ${token}`
+                )
                 .send({
                     module: "interview_feedback",
                     transcript:
@@ -666,7 +806,9 @@ describe("7.7 Admin Content, Prompt, CSV and Preview Flows", () => {
 
             expect(res.status).toBe(200);
             expect(res.body.success).toBe(true);
-            expect(res.body.data).toBeDefined();
+            expect(
+                res.body.data
+            ).toBeDefined();
 
             expect(
                 res.body.data.promptId
@@ -678,7 +820,9 @@ describe("7.7 Admin Content, Prompt, CSV and Preview Flows", () => {
 
             expect(
                 res.body.data.module
-            ).toBe("interview_feedback");
+            ).toBe(
+                "interview_feedback"
+            );
 
             expect(
                 res.body.data.output
