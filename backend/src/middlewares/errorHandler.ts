@@ -1,6 +1,7 @@
 import { Request, Response, NextFunction } from "express";
 import { ZodError } from "zod";
 import { AppError } from "../utils/AppError.js";
+import { logger } from "../utils/logger.js";
 
 export const errorHandler = (
   err: unknown,
@@ -8,9 +9,14 @@ export const errorHandler = (
   res: Response,
   next: NextFunction
 ) => {
-  console.error(
-    `[Error] ${req.method} ${req.url}`,
-    err
+  logger.error(
+    {
+      requestId: req.id,
+      method: req.method,
+      url: req.originalUrl,
+      err,
+    },
+    "Request failed"
   );
 
   // Zod validation errors
