@@ -1,4 +1,5 @@
 import { Router } from "express";
+
 import multer from "multer";
 
 import {
@@ -12,6 +13,7 @@ import {
 } from "../controllers/sessionControllers";
 
 import { authenticate } from "../middlewares/authMiddleware";
+
 import { validate } from "../middlewares/validate";
 
 import {
@@ -33,7 +35,33 @@ const upload = multer({
     storage: multer.memoryStorage(),
 });
 
-// Create session
+/**
+ * @openapi
+ * /sessions:
+ *   post:
+ *     tags:
+ *       - Sessions
+ *     summary: Create a session
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       201:
+ *         description: Session created successfully
+ *       401:
+ *         description: Unauthorized
+ *
+ *   get:
+ *     tags:
+ *       - Sessions
+ *     summary: List current user's sessions
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Sessions retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ */
 router.post(
     "/",
     authenticate,
@@ -43,14 +71,37 @@ router.post(
     createSession
 );
 
-// List current user's sessions
 router.get(
     "/",
     authenticate,
     getUserSessions
 );
 
-// Submit session — AI endpoint
+/**
+ * @openapi
+ * /sessions/{sessionId}/submit:
+ *   post:
+ *     tags:
+ *       - Sessions
+ *     summary: Submit a session for AI evaluation
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: sessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Session submitted successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Session not found
+ *       429:
+ *         description: AI rate limit or user quota exceeded
+ */
 router.post(
     "/:sessionId/submit",
     authenticate,
@@ -62,7 +113,29 @@ router.post(
     submitSession
 );
 
-// Get session detail
+/**
+ * @openapi
+ * /sessions/{sessionId}:
+ *   get:
+ *     tags:
+ *       - Sessions
+ *     summary: Get session details
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: sessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Session retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Session not found
+ */
 router.get(
     "/:sessionId",
     authenticate,
@@ -72,7 +145,34 @@ router.get(
     getSessionById
 );
 
-// Generate short-lived answer playback URL
+/**
+ * @openapi
+ * /sessions/{sessionId}/answers/{answerId}/playback:
+ *   get:
+ *     tags:
+ *       - Sessions
+ *     summary: Generate a short-lived answer playback URL
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: sessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: answerId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Playback URL generated successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Answer not found
+ */
 router.get(
     "/:sessionId/answers/:answerId/playback",
     authenticate,
@@ -82,7 +182,29 @@ router.get(
     getAnswerPlaybackUrl
 );
 
-// Delete session
+/**
+ * @openapi
+ * /sessions/{sessionId}:
+ *   delete:
+ *     tags:
+ *       - Sessions
+ *     summary: Delete a session
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: sessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Session deleted successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Session not found
+ */
 router.delete(
     "/:sessionId",
     authenticate,
@@ -92,7 +214,41 @@ router.delete(
     deleteSession
 );
 
-// Upload session answer
+/**
+ * @openapi
+ * /sessions/{sessionId}/answers:
+ *   post:
+ *     tags:
+ *       - Sessions
+ *     summary: Upload a session answer
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: sessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               audio:
+ *                 type: string
+ *                 format: binary
+ *     responses:
+ *       201:
+ *         description: Session answer uploaded successfully
+ *       400:
+ *         description: Invalid request
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Session not found
+ */
 router.post(
     "/:sessionId/answers",
     authenticate,

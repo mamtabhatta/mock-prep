@@ -19,7 +19,33 @@ import { createPromptSchema } from "../validations/promptValidation";
 
 const router = Router();
 
-// Create a new prompt version
+/**
+ * @openapi
+ * /prompts:
+ *   post:
+ *     tags:
+ *       - Prompts
+ *     summary: Create a new prompt version
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - module
+ *               - contentText
+ *             properties:
+ *               module:
+ *                 type: string
+ *               contentText:
+ *                 type: string
+ *     responses:
+ *       201:
+ *         description: Prompt version created successfully
+ *       400:
+ *         description: Invalid request
+ */
 router.post(
     "/prompts",
     validate({
@@ -28,7 +54,25 @@ router.post(
     createPrompt
 );
 
-// Get all versions for a module
+/**
+ * @openapi
+ * /prompts/module/{module}:
+ *   get:
+ *     tags:
+ *       - Prompts
+ *     summary: Get prompt version history for a module
+ *     parameters:
+ *       - in: path
+ *         name: module
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Prompt history retrieved successfully
+ *       400:
+ *         description: Invalid module
+ */
 router.get(
     "/prompts/module/:module",
     validate({
@@ -37,7 +81,25 @@ router.get(
     getPromptHistory
 );
 
-// Get currently active prompt for a module
+/**
+ * @openapi
+ * /prompts/module/{module}/active:
+ *   get:
+ *     tags:
+ *       - Prompts
+ *     summary: Get the active prompt for a module
+ *     parameters:
+ *       - in: path
+ *         name: module
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Active prompt retrieved successfully
+ *       400:
+ *         description: Invalid module
+ */
 router.get(
     "/prompts/module/:module/active",
     validate({
@@ -46,7 +108,25 @@ router.get(
     getActivePrompt
 );
 
-// Activate a specific prompt version
+/**
+ * @openapi
+ * /prompts/{promptId}/activate:
+ *   patch:
+ *     tags:
+ *       - Prompts
+ *     summary: Activate a prompt version
+ *     parameters:
+ *       - in: path
+ *         name: promptId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Prompt activated successfully
+ *       400:
+ *         description: Invalid prompt ID
+ */
 router.patch(
     "/prompts/:promptId/activate",
     validate({
@@ -55,7 +135,25 @@ router.patch(
     activatePrompt
 );
 
-// Roll back to a specific previous prompt version
+/**
+ * @openapi
+ * /prompts/{promptId}/rollback:
+ *   patch:
+ *     tags:
+ *       - Prompts
+ *     summary: Roll back to a previous prompt version
+ *     parameters:
+ *       - in: path
+ *         name: promptId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Prompt rolled back successfully
+ *       400:
+ *         description: Invalid prompt ID
+ */
 router.patch(
     "/prompts/:promptId/rollback",
     validate({

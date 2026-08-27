@@ -25,6 +25,29 @@ import {
 
 const router = Router();
 
+/**
+ * @openapi
+ * /question-sets:
+ *   post:
+ *     tags:
+ *       - Question Sets
+ *     summary: Create a question set
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       201:
+ *         description: Question set created successfully
+ *       400:
+ *         description: Invalid request
+ *       401:
+ *         description: Unauthorized
+ */
 router.post(
     "/question-sets",
     authenticate,
@@ -35,6 +58,29 @@ router.post(
     createQuestionSet
 );
 
+/**
+ * @openapi
+ * /question-sets/{setId}:
+ *   get:
+ *     tags:
+ *       - Question Sets
+ *     summary: Get a question set
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: setId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Question set retrieved successfully
+ *       400:
+ *         description: Invalid question set ID
+ *       401:
+ *         description: Unauthorized
+ */
 router.get(
     "/question-sets/:setId",
     authenticate,
@@ -44,6 +90,35 @@ router.get(
     getQuestionSet
 );
 
+/**
+ * @openapi
+ * /question-sets/{setId}:
+ *   patch:
+ *     tags:
+ *       - Question Sets
+ *     summary: Update a question set
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: setId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Question set updated successfully
+ *       400:
+ *         description: Invalid request
+ *       401:
+ *         description: Unauthorized
+ */
 router.patch(
     "/question-sets/:setId",
     authenticate,
@@ -55,6 +130,29 @@ router.patch(
     updateQuestionSet
 );
 
+/**
+ * @openapi
+ * /question-sets/{setId}/deactivate:
+ *   patch:
+ *     tags:
+ *       - Question Sets
+ *     summary: Deactivate a question set
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: setId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Question set deactivated successfully
+ *       400:
+ *         description: Invalid question set ID
+ *       401:
+ *         description: Unauthorized
+ */
 router.patch(
     "/question-sets/:setId/deactivate",
     authenticate,
@@ -65,6 +163,29 @@ router.patch(
     deactivateQuestionSet
 );
 
+/**
+ * @openapi
+ * /question-sets/{setId}:
+ *   delete:
+ *     tags:
+ *       - Question Sets
+ *     summary: Delete a question set
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: setId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Question set deleted successfully
+ *       400:
+ *         description: Invalid question set ID
+ *       401:
+ *         description: Unauthorized
+ */
 router.delete(
     "/question-sets/:setId",
     authenticate,
@@ -75,6 +196,29 @@ router.delete(
     deleteQuestionSet
 );
 
+/**
+ * @openapi
+ * /question-sets/{setId}/questions:
+ *   get:
+ *     tags:
+ *       - Question Sets
+ *     summary: Get questions for a question set
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: setId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Questions retrieved successfully
+ *       400:
+ *         description: Invalid question set ID
+ *       401:
+ *         description: Unauthorized
+ */
 router.get(
     "/question-sets/:setId/questions",
     authenticate,
@@ -84,12 +228,56 @@ router.get(
     getQuestionsForSet
 );
 
+/**
+ * @openapi
+ * /questions:
+ *   get:
+ *     tags:
+ *       - Questions
+ *     summary: Get all questions
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Questions retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ */
 router.get(
     "/questions",
     authenticate,
     getAllQuestions
 );
 
+/**
+ * @openapi
+ * /question-sets/{setId}/questions/reorder:
+ *   patch:
+ *     tags:
+ *       - Question Sets
+ *     summary: Reorder questions in a question set
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: setId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *     responses:
+ *       200:
+ *         description: Questions reordered successfully
+ *       400:
+ *         description: Invalid request
+ *       401:
+ *         description: Unauthorized
+ */
 router.patch(
     "/question-sets/:setId/questions/reorder",
     authenticate,

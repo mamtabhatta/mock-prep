@@ -24,6 +24,41 @@ import {
 
 const router = Router();
 
+/**
+ * @openapi
+ * /courses:
+ *   post:
+ *     tags:
+ *       - Courses
+ *     summary: Create a course
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - universityId
+ *               - name
+ *             properties:
+ *               universityId:
+ *                 type: string
+ *               name:
+ *                 type: string
+ *               track:
+ *                 type: string
+ *               isActive:
+ *                 type: boolean
+ *     responses:
+ *       201:
+ *         description: Course created successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
 router.post(
     "/courses",
     authenticate,
@@ -34,6 +69,29 @@ router.post(
     createCourse
 );
 
+/**
+ * @openapi
+ * /courses/{courseId}:
+ *   get:
+ *     tags:
+ *       - Courses
+ *     summary: Get a course
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: courseId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Course retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Course not found
+ */
 router.get(
     "/courses/:courseId",
     authenticate,
@@ -43,6 +101,23 @@ router.get(
     getCourse
 );
 
+/**
+ * @openapi
+ * /courses:
+ *   get:
+ *     tags:
+ *       - Courses
+ *     summary: Get all courses
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Courses retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
 router.get(
     "/courses",
     authenticate,
@@ -50,6 +125,44 @@ router.get(
     getAllCourses
 );
 
+/**
+ * @openapi
+ * /courses/{courseId}:
+ *   patch:
+ *     tags:
+ *       - Courses
+ *     summary: Update a course
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: courseId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               track:
+ *                 type: string
+ *               isActive:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Course updated successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Course not found
+ */
 router.patch(
     "/courses/:courseId",
     authenticate,
@@ -61,6 +174,31 @@ router.patch(
     updateCourse
 );
 
+/**
+ * @openapi
+ * /courses/{courseId}/deactivate:
+ *   patch:
+ *     tags:
+ *       - Courses
+ *     summary: Deactivate a course
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: courseId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Course deactivated successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Course not found
+ */
 router.patch(
     "/courses/:courseId/deactivate",
     authenticate,
@@ -71,6 +209,31 @@ router.patch(
     deactivateCourse
 );
 
+/**
+ * @openapi
+ * /courses/{courseId}:
+ *   delete:
+ *     tags:
+ *       - Courses
+ *     summary: Delete a course
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: courseId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Course deleted successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Course not found
+ */
 router.delete(
     "/courses/:courseId",
     authenticate,

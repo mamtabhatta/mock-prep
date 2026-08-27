@@ -6,6 +6,8 @@ import pinoHttp from "pino-http";
 import routes from "./routes/index.js";
 import { errorHandler } from "./middlewares/errorHandler.js";
 import { logger } from "./utils/logger";
+import swaggerUi from "swagger-ui-express";
+import { swaggerSpec } from "./config/swagger.js";
 
 const app = express();
 
@@ -27,6 +29,13 @@ app.use(helmet());
 app.use(cors({ origin: process.env.CORS_ORIGIN || "*" }));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+
+app.use(
+    "/docs",
+    swaggerUi.serve,
+    swaggerUi.setup(swaggerSpec)
+);
 
 // Base API Route
 app.use("/api/v1", routes);
