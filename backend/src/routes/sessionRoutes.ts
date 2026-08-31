@@ -28,6 +28,9 @@ import {
 
 import { aiRateLimiter } from "../middlewares/aiRateLimitMiddleware";
 import { aiUserQuota } from "../middlewares/aiQuotaMiddleware";
+import {
+    getNextInterviewQuestion,
+} from "../controllers/interviewQuestionControllers";
 
 const router = Router();
 
@@ -261,5 +264,42 @@ router.post(
     }),
     createSessionAnswer
 );
+
+/**
+ * @openapi
+ * /sessions/{sessionId}/next-question:
+ *   post:
+ *     tags:
+ *       - Sessions
+ *     summary: Generate the next personalized AI interview question
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: sessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Next interview question generated successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Session not found
+ *       429:
+ *         description: AI rate limit or user quota exceeded
+ */
+router.post(
+    "/:sessionId/next-question",
+    authenticate,
+    validate({
+        params: sessionIdParamSchema,
+    }),
+    aiRateLimiter,
+    aiUserQuota,
+    getNextInterviewQuestion
+);
+
 
 export default router;
