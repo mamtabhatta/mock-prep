@@ -129,8 +129,21 @@ export const deleteCourse = async (courseId: string) => {
 
     return course;
 };
-export const getAllCourses = async () => {
-    return await db
+
+export const getAllCourses = async (
+    universityId?: string
+) => {
+    const query = db
         .select()
-        .from(courses);
+        .from(courses)
+        .where(
+            universityId
+                ? and(
+                    eq(courses.universityId, universityId),
+                    eq(courses.isActive, true)
+                )
+                : eq(courses.isActive, true)
+        );
+
+    return await query;
 };

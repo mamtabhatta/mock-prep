@@ -6,6 +6,7 @@ import {
     updateUniversity,
     deactivateUniversity,
     deleteUniversity,
+     getUniversities,
 } from "../controllers/universityControllers";
 
 import { authenticate } from "../middlewares/authMiddleware";
@@ -39,6 +40,11 @@ router.post(
     authorize("super_admin"),
     createUniversity
 );
+router.get(
+    "/universities",
+    authenticate,
+    getUniversities
+);
 
 /**
  * @openapi
@@ -63,6 +69,14 @@ router.post(
  *       404:
  *         description: University not found
  */
+router.get(
+    "/universities/:universityId",
+    authenticate,
+    validate({
+        params: universityIdParamSchema,
+    }),
+    getUniversity
+);
 router.get(
     "/universities/:universityId",
     authenticate,

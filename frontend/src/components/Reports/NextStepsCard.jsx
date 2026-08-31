@@ -1,111 +1,246 @@
+
 import { Download } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 
-export default function NextStepsCard({ steps }) {
-  return (
-    <div className="mt-6 rounded-2xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900 p-6">
+export default function NextStepsCard({ report }) {
+    const navigate = useNavigate();
 
-      {/* Title */}
-      <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-        Your Next Steps
-      </h2>
+    // ============================================
+    // GET AI FEEDBACK
+    // ============================================
+
+    const aiFeedback =
+        report?.feedbackReport?.aiFeedbackJson || {};
+
+    // ============================================
+    // GET RECOMMENDATIONS
+    // ============================================
+
+    const recommendations =
+        Array.isArray(aiFeedback.recommendations)
+            ? aiFeedback.recommendations
+            : [];
+
+    // ============================================
+    // FALLBACK STEPS
+    // ============================================
+
+    const steps =
+        recommendations.length > 0
+            ? recommendations
+            : [
+                "Review your weaker answers.",
+                "Practice answering with a clearer structure.",
+                "Focus on giving specific examples.",
+            ];
+
+    // ============================================
+    // GET WEAK QUESTIONS
+    // ============================================
+
+    const questions = report?.questions || [];
+
+    const answerFeedback =
+        Array.isArray(aiFeedback.answer_feedback)
+            ? aiFeedback.answer_feedback
+            : [];
+
+    const weakQuestions = questions.filter((question) => {
+        const feedback = answerFeedback.find(
+            (item) =>
+                String(item.question_id) ===
+                String(question.id)
+        );
+
+        if (!feedback) {
+            return false;
+        }
+
+        const rawScore =
+            feedback.score ??
+            feedback.overall_score ??
+            feedback.overallScore ??
+            0;
+
+        const score = Number(rawScore);
+
+        if (isNaN(score)) {
+            return false;
+        }
+
+        // Convert /100 score to /10 if necessary
+        const normalizedScore =
+            score > 10
+                ? score / 10
+                : score;
+
+        // Anything below 6/10 is considered weak
+        return normalizedScore < 6;
+    });
+
+    // ============================================
+    // DRILL WEAK QUESTIONS
+    // ============================================
+
+    const handleDrillWeakQuestions = () => {
+    if (weakQuestions.length === 0) {
+        alert("You don't have any weak questions to drill.");
+        return;
+    }
+
+    const questionIds = weakQuestions
+        .map((question) => question.id)
+        .join(",");
+
+    navigate(
+        `/dashboard/interview/${report.id}?questions=${questionIds}`
+    );
+};
+
+    // ============================================
+    // DOWNLOAD PDF
+    // ============================================
+
+    const handleDownload = () => {
+        window.print();
+    };
+
+    // ============================================
+    // BACK TO DASHBOARD
+    // ============================================
+
+    const handleBackToDashboard = () => {
+        navigate("/dashboard");
+    };
+
+    // ============================================
+    // UI
+    // ============================================
+
+    return (
+        <div className="mt-6 rounded-2xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900 p-6">
+
+            {/* ================================= */}
+            {/* TITLE */}
+            {/* ================================= */}
+
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                Your Next Steps
+            </h2>
 
 
-      {/* Steps */}
-      <div className="mt-5 space-y-4">
+            {/* ================================= */}
+            {/* STEPS */}
+            {/* ================================= */}
 
-        {steps.map((step, index) => (
-          <div
-            key={index}
-            className="flex items-center gap-3"
-          >
+            <div className="mt-5 space-y-4">
 
-            {/* Number */}
-            <div className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">
-              {index + 1}
+                {steps.map((step, index) => (
+                    <div
+                        key={index}
+                        className="flex items-center gap-3"
+                    >
+
+                        <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">
+                            {index + 1}
+                        </div>
+
+                        <p className="text-sm text-gray-700 dark:text-gray-300">
+                            {step}
+                        </p>
+
+                    </div>
+                ))}
+
             </div>
 
 
-            {/* Text */}
-            <p className="text-sm text-gray-700 dark:text-gray-300">
-              {step}
-            </p>
+            {/* ================================= */}
+            {/* BUTTONS */}
+            {/* ================================= */}
 
-          </div>
-        ))}
+            <div className="mt-7 flex flex-wrap items-center gap-3 print:hidden">
 
-      </div>
+                {/* ================================= */}
+                {/* DRILL WEAK QUESTIONS */}
+                {/* ================================= */}
 
-
-      {/* Buttons */}
-      <div className="mt-7 flex flex-wrap items-center gap-3">
-
-        {/* Drill Button */}
-        <button
-          className="
-          rounded-xl 
-          bg-blue-600 
-          px-5 
-          py-2.5 
-          text-sm 
-          font-semibold 
-          text-white
-          hover:bg-blue-700
-          transition
-          "
-        >
-          Drill Weak Questions
-        </button>
+                <button
+                    type="button"
+                    onClick={handleDrillWeakQuestions}
+                    className="
+                        rounded-xl
+                        bg-blue-600
+                        px-5
+                        py-2.5
+                        text-sm
+                        font-semibold
+                        text-white
+                        hover:bg-blue-700
+                        transition
+                    "
+                >
+                    Drill Weak Questions
+                </button>
 
 
-        {/* Download */}
-        <button
-          className="
-          flex 
-          items-center 
-          gap-2
-          rounded-xl
-          border
-          border-gray-200
-          dark:border-gray-700
-          bg-white
-          dark:bg-gray-900
-          px-5
-          py-2.5
-          text-sm
-          font-semibold
-          text-blue-600
-          dark:text-blue-400
-          hover:bg-gray-50
-          dark:hover:bg-gray-800
-          transition
-          "
-        >
+                {/* ================================= */}
+                {/* DOWNLOAD PDF */}
+                {/* ================================= */}
 
-          <Download size={16}/>
+                <button
+                    type="button"
+                    onClick={handleDownload}
+                    className="
+                        flex
+                        items-center
+                        gap-2
+                        rounded-xl
+                        border
+                        border-gray-200
+                        dark:border-gray-700
+                        bg-white
+                        dark:bg-gray-900
+                        px-5
+                        py-2.5
+                        text-sm
+                        font-semibold
+                        text-blue-600
+                        dark:text-blue-400
+                        hover:bg-gray-50
+                        dark:hover:bg-gray-800
+                        transition
+                    "
+                >
+                    <Download size={16} />
 
-          Download PDF
-
-        </button>
-
-
-        {/* Back */}
-        <button
-          className="
-          ml-auto
-          text-sm
-          font-medium
-          text-gray-500
-          dark:text-gray-400
-          hover:text-blue-600
-          dark:hover:text-blue-400
-          "
-        >
-          Back to dashboard
-        </button>
+                    Download PDF
+                </button>
 
 
-      </div>
+                {/* ================================= */}
+                {/* BACK TO DASHBOARD */}
+                {/* ================================= */}
 
-    </div>
-  );
+                <button
+                    type="button"
+                    onClick={handleBackToDashboard}
+                    className="
+                        ml-auto
+                        text-sm
+                        font-medium
+                        text-gray-500
+                        dark:text-gray-400
+                        hover:text-blue-600
+                        dark:hover:text-blue-400
+                    "
+                >
+                    Back to dashboard
+                </button>
+
+            </div>
+
+        </div>
+    );
 }
+

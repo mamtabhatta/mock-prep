@@ -201,3 +201,34 @@ export const getAllQuestions = async () => {
         .where(eq(questions.isActive, true))
         .orderBy(asc(questions.orderIndex));
 };
+export const getAllQuestionSets = async (
+    courseId?: string
+) => {
+    if (courseId) {
+        return await db
+            .select()
+            .from(questionSets)
+            .where(
+                and(
+                    eq(
+                        questionSets.courseId,
+                        courseId
+                    ),
+                    eq(
+                        questionSets.isActive,
+                        true
+                    )
+                )
+            );
+    }
+
+    return await db
+        .select()
+        .from(questionSets)
+        .where(
+            eq(
+                questionSets.isActive,
+                true
+            )
+        );
+};

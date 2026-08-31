@@ -72,3 +72,11 @@ export const deleteUniversity = async (id: string) => {
 
     return university ?? null;
 };
+export const getAllUniversities = async () => {
+    const universityList = await db
+        .select()
+        .from(universities)
+        .where(eq(universities.isActive, true));
+
+    return universityList;
+};

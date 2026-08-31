@@ -1,28 +1,44 @@
 export default function ReportHeader({ report }) {
-  return (
-    <div className="mb-6">
-      {/* Session Status */}
-      <p className="text-xs font-semibold uppercase tracking-wide text-green-600 dark:text-green-400">
-        ✓ Session Complete
-      </p>
 
-      {/* Title */}
-      <h1 className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
-        Interview Feedback Report
-      </h1>
+    const university =
+        report.university?.name ||
+        report.universityName ||
+        "University";
 
-      {/* Subtitle */}
-      <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
-        <span>{report.university}</span>
+    const course =
+        report.course?.name ||
+        report.courseName ||
+        "Interview";
 
-        <span>•</span>
+    const date = report.submittedAt || report.startedAt;
 
-        <span>{report.course}</span>
+    const formattedDate = date
+        ? new Date(date).toLocaleDateString("en-US", {
+            year: "numeric",
+            month: "short",
+            day: "numeric",
+        })
+        : "";
 
-        <span>•</span>
+    return (
+        <div className="mb-6">
 
-        <span>{report.date}</span>
-      </div>
-    </div>
-  );
+            <p className="text-xs font-semibold uppercase tracking-wide text-green-600 dark:text-green-400">
+                ✓ Session Complete
+            </p>
+
+            <h1 className="mt-2 text-3xl font-bold text-gray-900 dark:text-white">
+                Interview Feedback Report
+            </h1>
+
+            <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
+                <span>{university}</span>
+                <span>•</span>
+                <span>{course}</span>
+                <span>•</span>
+                <span>{formattedDate}</span>
+            </div>
+
+        </div>
+    );
 }

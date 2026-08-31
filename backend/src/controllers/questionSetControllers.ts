@@ -187,3 +187,25 @@ export const getAllQuestions = async (
         next(error);
     }
 };
+export const getAllQuestionSets = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const courseId =
+            req.query.courseId as string | undefined;
+
+        const data =
+            await questionSetService.getAllQuestionSets(
+                courseId
+            );
+
+        return res.status(200).json({
+            success: true,
+            data,
+        });
+    } catch (error) {
+        next(error);
+    }
+};

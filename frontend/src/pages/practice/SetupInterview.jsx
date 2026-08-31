@@ -1,124 +1,382 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import UniversityCard from "../../components/practice/UniversityCard";
 import CourseInput from "../../components/practice/CourseInput";
 import InterviewFormat from "../../components/practice/InterviewFormat";
 import DocumentUpload from "../../components/practice/DocumentUpload";
 import UploadedFile from "../../components/practice/UploadFile";
 import ContinueButton from "../../components/practice/ContinueInterview";
+import api from "../../api/api";
 
 function SetupInterview() {
-    const [selectedUniversity, setSelectedUniversity] = useState(null);
-    const [course, setCourse] = useState("");
+    const [universities, setUniversities] = useState([]);
+    const [courses, setCourses] = useState([]);
+    const [questionSets, setQuestionSets] = useState([]);
+
+    const [selectedUniversity, setSelectedUniversity] =
+        useState(null);
+
+    const [selectedCourse, setSelectedCourse] =
+        useState("");
+
+    const [selectedQuestionSet, setSelectedQuestionSet] =
+        useState("");
+
     const [format, setFormat] = useState("Panel");
     const [file, setFile] = useState(null);
 
-    const universities = [
-        {
-            id: 1,
-            code: "UCL",
-            name: "University College London",
-            city: "London",
-        },
-        {
-            id: 2,
-            code: "LDS",
-            name: "University of Leeds",
-            city: "Leeds",
-        },
-        {
-            id: 3,
-            code: "MAN",
-            name: "University of Manchester",
-            city: "Manchester",
-        },
-        {
-            id: 4,
-            code: "EDI",
-            name: "University of Edinburgh",
-            city: "Edinburgh",
-        },
-    ];
+    const [loading, setLoading] = useState(true);
+    const [loadingCourses, setLoadingCourses] =
+        useState(false);
+    const [loadingQuestionSets, setLoadingQuestionSets] =
+        useState(false);
+
+    const [error, setError] = useState("");
+
+    // Fetch universities
+    useEffect(() => {
+        const fetchUniversities = async () => {
+            try {
+                setLoading(true);
+                setError("");
+
+                const response =
+                    await api.get("/universities");
+
+                setUniversities(
+                    response.data.data || []
+                );
+            } catch (error) {
+                console.error(
+                    "Failed to fetch universities:",
+                    error
+                );
+
+                setError(
+                    error.response?.data?.message ||
+                    "Failed to load universities."
+                );
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchUniversities();
+    }, []);
+
+    // Fetch courses when university changes
+    useEffect(() => {
+        if (!selectedUniversity) {
+            setCourses([]);
+            setSelectedCourse("");
+            setQuestionSets([]);
+            setSelectedQuestionSet("");
+            return;
+        }
+
+        const fetchCourses = async () => {
+            try {
+                setLoadingCourses(true);
+                setError("");
+
+                const response = await api.get(
+                    `/courses?universityId=${selectedUniversity}`
+                );
+
+                const courseData =
+                    response.data.data || [];
+
+                setCourses(courseData);
+                setSelectedCourse("");
+                setQuestionSets([]);
+                setSelectedQuestionSet("");
+            } catch (error) {
+                console.error(
+                    "Failed to fetch courses:",
+                    error
+                );
+
+                setError(
+                    error.response?.data?.message ||
+                    "Failed to load courses."
+                );
+            } finally {
+                setLoadingCourses(false);
+            }
+        };
+
+        fetchCourses();
+    }, [selectedUniversity]);
+
+    // Fetch question sets when course changes
+    useEffect(() => {
+        if (!selectedCourse) {
+            setQuestionSets([]);
+            setSelectedQuestionSet("");
+            return;
+        }
+
+        const fetchQuestionSets = async () => {
+            try {
+                setLoadingQuestionSets(true);
+                setError("");
+
+                const response =
+                    await api.get(
+                        `/question-sets?courseId=${selectedCourse}`
+                    );
+
+                const sets =
+                    response.data.data || [];
+
+                const activeSets =
+                    sets.filter(
+                        (set) => set.isActive
+                    );
+
+                setQuestionSets(activeSets);
+
+                if (activeSets.length > 0) {
+                    setSelectedQuestionSet(
+                        activeSets[0].id
+                    );
+                } else {
+                    setSelectedQuestionSet("");
+                }
+            } catch (error) {
+                console.error(
+                    "Failed to fetch question sets:",
+                    error
+                );
+
+                setError(
+                    error.response?.data?.message ||
+                    "Failed to load question sets."
+                );
+            } finally {
+                setLoadingQuestionSets(false);
+            }
+        };
+
+        fetchQuestionSets();
+    }, [selectedCourse]);
 
     return (
-        <div className="min-h-screen bg-gray-50 p-10">
-            <div className="max-w-7xl mx-auto">
+        <div className="min-h-screen bg-slate-50 px-6 py-8 transition-colors duration-300 dark:bg-slate-950">
+            <div className="mx-auto max-w-6xl">
 
-                {/* Header */}
-
-                <div className="mb-10">
-                    <h1 className="text-5xl font-bold text-gray-900">
+                <div className="mb-8">
+                    <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
                         Set up your interview
                     </h1>
 
-                    <p className="mt-3 text-lg text-gray-500">
-                        Pick your university, tell us the course, and add any documents.
+                    <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                        Choose your university, select your course,
+                        and upload any relevant documents.
                     </p>
                 </div>
 
-                {/* Main Grid */}
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
 
-                <div className="grid grid-cols-12 gap-8">
+                    {/* Universities */}
+                    <div className="lg:col-span-7">
 
-                    {/* Left */}
+                        <div className="mb-4 flex items-center gap-3">
+                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white dark:bg-white dark:text-slate-900">
+                                1
+                            </span>
 
-                    <div className="col-span-7">
-
-                        <h2 className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-5">
-                            1 • Choose University
-                        </h2>
-
-                        <div className="grid grid-cols-2 gap-5">
-
-                            {universities.map((uni) => (
-                                <UniversityCard
-                                    key={uni.id}
-                                    code={uni.code}
-                                    name={uni.name}
-                                    city={uni.city}
-                                    selected={selectedUniversity === uni.id}
-                                    onClick={() => setSelectedUniversity(uni.id)}
-                                />
-                            ))}
-
+                            <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+                                Choose University
+                            </h2>
                         </div>
 
-                    </div>
-
-                    {/* Right */}
-
-                    <div className="col-span-5 rounded-3xl bg-white border border-gray-200 shadow-sm p-8">
-
-                        <CourseInput
-                            value={course}
-                            onChange={setCourse}
-                        />
-
-                        <div className="mt-8">
-
-                            <InterviewFormat
-                                value={format}
-                                onChange={setFormat}
-                            />
-
-                        </div>
-
-                        <div className="mt-8">
-
-                            <DocumentUpload
-                                onFileChange={setFile}
-                            />
-
-                        </div>
-                        {file && (
-                            <div className="mt-6">
-                                <UploadedFile file={file} />
+                        {loading && (
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                {[1, 2, 3, 4].map((item) => (
+                                    <div
+                                        key={item}
+                                        className="h-32 animate-pulse rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
+                                    />
+                                ))}
                             </div>
                         )}
 
-                        <div className="mt-8">
-                            <ContinueButton />
-                        </div>
+                        {!loading && error && (
+                            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400">
+                                {error}
+                            </div>
+                        )}
 
+                        {!loading && !error && (
+                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                                {universities.map(
+                                    (university) => (
+                                        <UniversityCard
+                                            key={university.id}
+                                            code={university.name
+                                                .substring(
+                                                    0,
+                                                    3
+                                                )
+                                                .toUpperCase()}
+                                            name={
+                                                university.name
+                                            }
+                                            city={
+                                                university.country
+                                            }
+                                            selected={
+                                                selectedUniversity ===
+                                                university.id
+                                            }
+                                            onClick={() =>
+                                                setSelectedUniversity(
+                                                    university.id
+                                                )
+                                            }
+                                        />
+                                    )
+                                )}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Interview Details */}
+                    <div className="lg:col-span-5">
+
+                        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+
+                            <div className="mb-6 border-b border-slate-100 pb-5 dark:border-slate-800">
+                                <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
+                                    Interview details
+                                </h2>
+
+                                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                    Complete the details below to continue.
+                                </p>
+                            </div>
+
+                            {/* Course */}
+                            {loadingCourses ? (
+                                <div className="rounded-lg bg-slate-100 p-3 text-sm text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+                                    Loading courses...
+                                </div>
+                            ) : (
+                                <select
+                                    value={selectedCourse}
+                                    onChange={(e) =>
+                                        setSelectedCourse(
+                                            e.target.value
+                                        )
+                                    }
+                                    disabled={
+                                        !selectedUniversity
+                                    }
+                                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                >
+                                    <option value="">
+                                        {!selectedUniversity
+                                            ? "Select university first"
+                                            : "Select course"}
+                                    </option>
+
+                                    {courses.map(
+                                        (item) => (
+                                            <option
+                                                key={
+                                                    item.id
+                                                }
+                                                value={
+                                                    item.id
+                                                }
+                                            >
+                                                {item.name}
+                                            </option>
+                                        )
+                                    )}
+                                </select>
+                            )}
+
+                            {/* Question Set */}
+                            {selectedCourse && (
+                                <div className="mt-4">
+                                    <select
+                                        value={
+                                            selectedQuestionSet
+                                        }
+                                        onChange={(e) =>
+                                            setSelectedQuestionSet(
+                                                e.target.value
+                                            )
+                                        }
+                                        disabled={
+                                            loadingQuestionSets
+                                        }
+                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+                                    >
+                                        <option value="">
+                                            {loadingQuestionSets
+                                                ? "Loading question sets..."
+                                                : "Select question set"}
+                                        </option>
+
+                                        {questionSets.map(
+                                            (set) => (
+                                                <option
+                                                    key={
+                                                        set.id
+                                                    }
+                                                    value={
+                                                        set.id
+                                                    }
+                                                >
+                                                    {set.name}
+                                                </option>
+                                            )
+                                        )}
+                                    </select>
+                                </div>
+                            )}
+
+                            {/* Interview Format */}
+                            <div className="mt-6">
+                                <InterviewFormat
+                                    value={format}
+                                    onChange={setFormat}
+                                />
+                            </div>
+
+                            {/* Document Upload */}
+                            <div className="mt-6">
+                                <DocumentUpload
+                                    onFileChange={setFile}
+                                />
+                            </div>
+
+                            {file && (
+                                <div className="mt-4">
+                                    <UploadedFile
+                                        file={file}
+                                    />
+                                </div>
+                            )}
+
+                            {/* Continue */}
+                            <div className="mt-6 border-t border-slate-100 pt-5 dark:border-slate-800">
+                                <ContinueButton
+                                    universityId={
+                                        selectedUniversity
+                                    }
+                                    courseId={
+                                        selectedCourse
+                                    }
+                                    questionSetId={
+                                        selectedQuestionSet
+                                    }
+                                />
+                            </div>
+
+                        </div>
                     </div>
                 </div>
             </div>

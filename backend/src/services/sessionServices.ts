@@ -12,6 +12,7 @@ import {
     sessionAnswers,
     feedbackReports,
     questions,
+    questionSets,
 } from "../db/schema";
 
 import {
@@ -69,6 +70,7 @@ export const createSession = async (
 // GET USER SESSIONS
 // ============================================
 
+
 export const getUserSessions = async (
     userId: string
 ) => {
@@ -83,8 +85,38 @@ export const getUserSessions = async (
                 )
             );
 
-    return userSessions;
+    // Get feedback report for each session
+    const sessionsWithReports =
+        await Promise.all(
+            userSessions.map(
+                async (session) => {
+                    const [feedbackReport] =
+                        await db
+                            .select()
+                            .from(
+                                feedbackReports
+                            )
+                            .where(
+                                eq(
+                                    feedbackReports.sessionId,
+                                    session.id
+                                )
+                            );
+
+                    return {
+                        ...session,
+                        feedbackReport:
+                            feedbackReport ??
+                            null,
+                    };
+                }
+            )
+        );
+
+    return sessionsWithReports;
 };
+
+
 
 
 // ============================================
@@ -95,53 +127,65 @@ export const getSessionById = async (
     userId: string,
     sessionId: string
 ) => {
-    const [session] =
-        await db
+    const [session] = await db
+        .select()
+        .from(sessions)
+        .where(
+            and(
+                eq(sessions.id, sessionId),
+                eq(sessions.userId, userId)
+            )
+        );
+
+    if (!session) {
+        throw new Error("Session not found");
+    }
+
+    const answers = await db
+        .select()
+        .from(sessionAnswers)
+        .where(
+            eq(
+                sessionAnswers.sessionId,
+                sessionId
+            )
+        );
+
+    const [feedbackReport] = await db
+        .select()
+        .from(feedbackReports)
+        .where(
+            eq(
+                feedbackReports.sessionId,
+                sessionId
+            )
+        );
+
+    // Get questions belonging to this session's question set
+    const sessionQuestions = session.questionSetId
+        ? await db
             .select()
-            .from(sessions)
+            .from(questions)
             .where(
                 and(
                     eq(
-                        sessions.id,
-                        sessionId
+                        questions.questionSetId,
+                        session.questionSetId
                     ),
                     eq(
-                        sessions.userId,
-                        userId
+                        questions.isActive,
+                        true
                     )
                 )
-            );
-
-    if (!session) {
-        throw new Error(
-            "Session not found"
-        );
-    }
-
-    const answers =
-        await db
-            .select()
-            .from(sessionAnswers)
-            .where(
-                eq(
-                    sessionAnswers.sessionId,
-                    sessionId
-                )
-            );
-
-    const [feedbackReport] =
-        await db
-            .select()
-            .from(feedbackReports)
-            .where(
-                eq(
-                    feedbackReports.sessionId,
-                    sessionId
-                )
-            );
+            )
+            .orderBy(
+                questions.orderIndex
+            )
+        : [];
 
     return {
         ...session,
+        questions: sessionQuestions,
         answers,
         feedbackReport:
             feedbackReport ?? null,

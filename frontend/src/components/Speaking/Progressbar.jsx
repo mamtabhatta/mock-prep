@@ -17,7 +17,7 @@ export default function ProgressBar() {
         >
           Exit ✕
         </button>
-      </div>z
+      </div>
 
       {/* Progress Bar */}
       <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">

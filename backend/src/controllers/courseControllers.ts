@@ -103,7 +103,13 @@ export const getAllCourses = async (
     next: NextFunction
 ) => {
     try {
-        const data = await courseService.getAllCourses();
+        const universityId =
+            req.query.universityId as string | undefined;
+
+        const data =
+            await courseService.getAllCourses(
+                universityId
+            );
 
         return res.status(200).json({
             success: true,

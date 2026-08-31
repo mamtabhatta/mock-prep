@@ -9,6 +9,7 @@ import {
     getQuestionsForSet,
     reorderQuestions,
     getAllQuestions,
+    getAllQuestionSets
 } from "../controllers/questionSetControllers";
 
 import { authenticate } from "../middlewares/authMiddleware";
@@ -56,6 +57,11 @@ router.post(
         body: createQuestionSetSchema,
     }),
     createQuestionSet
+);
+router.get(
+    "/question-sets",
+    authenticate,
+    getAllQuestionSets
 );
 
 /**

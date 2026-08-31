@@ -1,193 +1,701 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+
+import { useEffect, useState, useCallback, useRef } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { ArrowRight } from "lucide-react";
+
+import api from "../../api/api";
 import useCamera from "../../hooks/useCamera";
-import { X, ArrowRight } from "lucide-react";
-import { questions } from "../../data/questions";
+
 import RecordingRing from "../../components/Interview/RecordingRing";
 import TopBar from "../../components/Interview/TopBar";
 import CameraPreview from "../../components/Interview/CameraPreview";
+import QuestionHeader from "../../components/Interview/QuestionHeader";
 
 export default function Interview() {
   const TOTAL_TIME = 120;
+
   const navigate = useNavigate();
+  const { sessionId } = useParams();
+
   const {
     videoRef,
-    stream,
-    loading,
+    loading: cameraLoading,
     permissionDenied,
   } = useCamera();
+
+  const [questions, setQuestions] = useState([]);
   const [currentQuestion, setCurrentQuestion] = useState(0);
 
   const [secondsLeft, setSecondsLeft] = useState(TOTAL_TIME);
 
   const [isRecording, setIsRecording] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // ============================================
+  // MEDIA RECORDER
+  // ============================================
 
+  const mediaRecorderRef = useRef(null);
+  const streamRef = useRef(null);
+  const chunksRef = useRef([]);
+
+  const recordingStartTimeRef = useRef(null);
+
+  // ============================================
+  // RECEIVE QUESTIONS FROM QUESTION HEADER
+  // ============================================
+
+  const handleQuestionsLoaded = useCallback(
+    (fetchedQuestions) => {
+      setQuestions(fetchedQuestions);
+    },
+    []
+  );
+
+  // ============================================
+  // START RECORDING
+  // ============================================
+
+  const startRecording = async () => {
+    if (isSubmitting) return;
+
+    try {
+      const stream =
+        await navigator.mediaDevices.getUserMedia({
+          audio: true,
+        });
+
+      streamRef.current = stream;
+
+      const mediaRecorder = new MediaRecorder(
+        stream
+      );
+
+      mediaRecorderRef.current =
+        mediaRecorder;
+
+      chunksRef.current = [];
+
+      mediaRecorder.ondataavailable = (
+        event
+      ) => {
+        if (event.data.size > 0) {
+          chunksRef.current.push(
+            event.data
+          );
+        }
+      };
+
+      mediaRecorder.start();
+
+      recordingStartTimeRef.current =
+        Date.now();
+
+      setSecondsLeft(TOTAL_TIME);
+      setIsRecording(true);
+
+    } catch (error) {
+      console.error(
+        "Microphone error:",
+        error
+      );
+
+      alert(
+        "Unable to access your microphone."
+      );
+    }
+  };
+
+  // ============================================
+  // STOP RECORDING
+  // ============================================
+
+  const stopRecording = () => {
+    return new Promise((resolve) => {
+      const mediaRecorder =
+        mediaRecorderRef.current;
+
+      if (!mediaRecorder) {
+        resolve(null);
+        return;
+      }
+
+      const handleStop = () => {
+        const audioBlob = new Blob(
+          chunksRef.current,
+          {
+            type: "audio/webm",
+          }
+        );
+
+        const elapsedSeconds =
+          recordingStartTimeRef.current
+            ? Math.ceil(
+                (Date.now() -
+                  recordingStartTimeRef.current) /
+                  1000
+              )
+            : 1;
+
+        // Stop microphone tracks
+        if (streamRef.current) {
+          streamRef.current
+            .getTracks()
+            .forEach((track) =>
+              track.stop()
+            );
+        }
+
+        mediaRecorderRef.current = null;
+        streamRef.current = null;
+
+        chunksRef.current = [];
+        recordingStartTimeRef.current =
+          null;
+
+        setIsRecording(false);
+
+        resolve({
+          audioBlob,
+          durationSeconds: Math.max(
+            1,
+            elapsedSeconds
+          ),
+        });
+      };
+
+      mediaRecorder.addEventListener(
+        "stop",
+        handleStop,
+        { once: true }
+      );
+
+      if (
+        mediaRecorder.state !==
+        "inactive"
+      ) {
+        mediaRecorder.stop();
+      } else {
+        handleStop();
+      }
+    });
+  };
+
+  // ============================================
+  // RECORDING BUTTON
+  // ============================================
+
+  const toggleRecording = async () => {
+    if (isSubmitting) return;
+
+    if (isRecording) {
+      await stopRecording();
+    } else {
+      await startRecording();
+    }
+  };
+
+  // ============================================
+  // RESET TIMER
+  // ============================================
+
+  const resetTimer = () => {
+    setSecondsLeft(TOTAL_TIME);
+    setIsRecording(false);
+  };
+
+  // ============================================
+  // SUBMIT SESSION
+  // ============================================
+
+  const submitSession = async () => {
+    try {
+      const response =
+        await api.post(
+          `/sessions/${sessionId}/submit`
+        );
+
+      console.log(
+        "Session submitted:",
+        response.data
+      );
+
+      return true;
+
+    } catch (error) {
+      console.error(
+        "Failed to submit session:",
+        error
+      );
+
+      alert(
+        error.response?.data?.message ||
+          "Failed to submit the interview."
+      );
+
+      return false;
+    }
+  };
+
+  // ============================================
+  // UPLOAD ANSWER
+  // ============================================
+
+  const uploadAnswer = async (
+    audioBlob,
+    durationSeconds
+  ) => {
+    const question =
+      questions[currentQuestion];
+
+    if (!question?.id) {
+      throw new Error(
+        "Question ID is missing."
+      );
+    }
+
+    const formData = new FormData();
+
+    formData.append(
+      "audio",
+      audioBlob,
+      `answer-${question.id}.webm`
+    );
+
+    formData.append(
+      "questionId",
+      question.id
+    );
+
+    formData.append(
+      "durationSeconds",
+      String(durationSeconds)
+    );
+
+    const response =
+      await api.post(
+        `/sessions/${sessionId}/answers`,
+        formData,
+        {
+          headers: {
+            "Content-Type":
+              "multipart/form-data",
+          },
+        }
+      );
+
+    console.log(
+      "Answer uploaded:",
+      response.data
+    );
+
+    return response.data;
+  };
+
+  // ============================================
+  // SUBMIT CURRENT ANSWER
+  // ============================================
+
+  const submitAnswer = useCallback(
+    async () => {
+      if (
+        isSubmitting ||
+        questions.length === 0
+      ) {
+        return;
+      }
+
+      setIsSubmitting(true);
+
+      try {
+        let recording = null;
+
+        // If still recording, stop it first
+        if (isRecording) {
+          recording =
+            await stopRecording();
+        } else {
+          // Recording must exist before answer
+          // can be submitted.
+          alert(
+            "Please record your answer before submitting."
+          );
+
+          setIsSubmitting(false);
+          return;
+        }
+
+        if (
+          !recording?.audioBlob ||
+          recording.audioBlob.size === 0
+        ) {
+          throw new Error(
+            "No recording was captured."
+          );
+        }
+
+        // Upload current answer
+        await uploadAnswer(
+          recording.audioBlob,
+          recording.durationSeconds
+        );
+
+        // ========================================
+        // LAST QUESTION
+        // ========================================
+
+        const isLastQuestion =
+          currentQuestion ===
+          questions.length - 1;
+
+        if (isLastQuestion) {
+          // Change session status:
+          // in_progress → submitted
+          const submitted =
+            await submitSession();
+
+          if (submitted) {
+            navigate(
+              "/dashboard/reports"
+            );
+          }
+
+          return;
+        }
+
+        // ========================================
+        // NEXT QUESTION
+        // ========================================
+
+        setCurrentQuestion(
+          (prev) => prev + 1
+        );
+
+        setSecondsLeft(TOTAL_TIME);
+
+      } catch (error) {
+        console.error(
+          "Failed to submit answer:",
+          error
+        );
+
+        alert(
+          error.response?.data?.message ||
+            error.message ||
+            "Failed to submit your answer."
+        );
+      } finally {
+        setIsSubmitting(false);
+      }
+    },
+    [
+      currentQuestion,
+      questions,
+      isRecording,
+      isSubmitting,
+      sessionId,
+      navigate,
+    ]
+  );
+
+  // ============================================
+  // TIMER
+  // ============================================
 
   useEffect(() => {
-    if (!isRecording) return;
+    if (
+      !isRecording ||
+      isSubmitting
+    ) {
+      return;
+    }
 
-    if (secondsLeft === 0) {
+    if (secondsLeft <= 0) {
       submitAnswer();
       return;
     }
 
     const timer = setInterval(() => {
-      setSecondsLeft((prev) => prev - 1);
+      setSecondsLeft(
+        (prev) => prev - 1
+      );
     }, 1000);
 
-    return () => clearInterval(timer);
-  }, [isRecording, secondsLeft]);
+    return () =>
+      clearInterval(timer);
+  }, [
+    isRecording,
+    isSubmitting,
+    secondsLeft,
+    submitAnswer,
+  ]);
 
+  // ============================================
+  // SKIP QUESTION
+  // ============================================
 
+  const skipQuestion = async () => {
+    if (
+      isSubmitting ||
+      questions.length === 0
+    ) {
+      return;
+    }
 
-  const progress =
-    ((currentQuestion + 1) / questions.length) * 100;
+    // Stop recording if currently recording
+    if (isRecording) {
+      await stopRecording();
+    }
 
+    const isLastQuestion =
+      currentQuestion ===
+      questions.length - 1;
 
-  const formatTime = (seconds) => {
-    const minutes = Math.floor(seconds / 60);
+    if (isLastQuestion) {
+      const submitted =
+        await submitSession();
 
-    const remain = seconds % 60;
+      if (submitted) {
+        navigate(
+          "/dashboard/reports"
+        );
+      }
 
-    return `${String(minutes).padStart(2, "0")}:${String(
-      remain
-    ).padStart(2, "0")}`;
+      return;
+    }
+
+    setCurrentQuestion(
+      (prev) => prev + 1
+    );
+
+    resetTimer();
   };
 
+  // ============================================
+  // PROGRESS
+  // ============================================
 
-  function toggleRecording() {
-    setIsRecording((prev) => !prev);
-  }
+  const progress =
+    questions.length > 0
+      ? ((currentQuestion + 1) /
+          questions.length) *
+        100
+      : 0;
 
+  // ============================================
+  // CLEANUP
+  // ============================================
 
-  function resetTimer() {
-    setSecondsLeft(TOTAL_TIME);
-    setIsRecording(false);
-  }
+  useEffect(() => {
+    return () => {
+      if (streamRef.current) {
+        streamRef.current
+          .getTracks()
+          .forEach((track) =>
+            track.stop()
+          );
+      }
+    };
+  }, []);
 
-
-  function nextQuestion() {
-    if (currentQuestion < questions.length - 1) {
-      setCurrentQuestion((prev) => prev + 1);
-      resetTimer();
-    } else {
-      setIsRecording(false);
-      navigate("/reports");
-    }
-  }
-
-
-  function skipQuestion() {
-    nextQuestion();
-  }
-
-
-
-  function submitAnswer() {
-    nextQuestion();
-  }
-
-
+  // ============================================
+  // UI
+  // ============================================
 
   return (
-    <div className="min-h-screen bg-[#0B1220] text-white">
+    <div className="min-h-screen bg-slate-950 text-white">
 
-      <div className="max-w-7xl mx-auto px-8 py-8">
+      <div className="mx-auto max-w-6xl px-5 py-6 sm:px-8">
 
-        {/* ---------- Top Bar ---------- */}
+        {/* ========================================
+            TOP BAR
+        ======================================== */}
+
         <TopBar
-          currentQuestion={currentQuestion + 1}
-          totalQuestions={questions.length}
+          currentQuestion={
+            questions.length > 0
+              ? currentQuestion + 1
+              : 0
+          }
+          totalQuestions={
+            questions.length
+          }
           progress={progress}
         />
 
-        {/* ---------- Question ---------- */}
+        {/* ========================================
+            QUESTION HEADER
+        ======================================== */}
 
-        <div className="mt-7 text-center max-w-1xl mx-auto">
+        <div className="mt-10">
 
-          <p className="uppercase tracking-[1px] text-blue-400 font-semibold">
-
-            {questions[currentQuestion].type}
-
-            {" • "}
-
-            {questions[currentQuestion].university}
-
-          </p>
-
-          <h1 className="text-3xl font-bold mt-6 leading-tight">
-
-            {questions[currentQuestion].question}
-
-          </h1>
-
-        </div>
-        {/* ---------- Main Content ---------- */}
-
-        <div className="mt-7 flex items-center justify-center gap-8">
-
-          <CameraPreview
-            videoRef={videoRef}
-            loading={loading}
-            permissionDenied={permissionDenied}
+          <QuestionHeader
+            sessionId={sessionId}
+            currentQuestion={
+              currentQuestion
+            }
+            onQuestionsLoaded={
+              handleQuestionsLoaded
+            }
           />
 
-          <div className="flex flex-col items-center">
-            <RecordingRing
-              secondsLeft={secondsLeft}
-              totalSeconds={TOTAL_TIME}
-              isRecording={isRecording}
-              onToggleRecording={toggleRecording}
-            />
+        </div>
 
+        {/* ========================================
+            CAMERA + RECORDING
+        ======================================== */}
+
+        <section className="
+          mt-8
+          flex
+          flex-col
+          items-center
+          justify-center
+          gap-8
+          lg:flex-row
+        ">
+
+          {/* CAMERA */}
+
+          <div className="shrink-0">
+
+            <CameraPreview
+              videoRef={videoRef}
+              loading={cameraLoading}
+              permissionDenied={
+                permissionDenied
+              }
+            />
 
           </div>
 
-        </div>
+          {/* RECORDING */}
 
-        {/* ---------- Bottom Buttons ---------- */}
+          <div className="
+            flex
+            min-w-[180px]
+            flex-col
+            items-center
+            justify-center
+          ">
 
-        <div className="mt-20 flex justify-center gap-6">
+            <RecordingRing
+              secondsLeft={
+                secondsLeft
+              }
+              totalSeconds={
+                TOTAL_TIME
+              }
+              isRecording={
+                isRecording
+              }
+              onToggleRecording={
+                toggleRecording
+              }
+            />
+
+            <p className="
+              mt-4
+              text-xs
+              text-slate-500
+            ">
+              {isSubmitting
+                ? "Submitting your answer..."
+                : isRecording
+                ? "Recording your answer..."
+                : "Click to start recording"}
+            </p>
+
+          </div>
+
+        </section>
+
+        {/* ========================================
+            ACTION BUTTONS
+        ======================================== */}
+
+        <section className="
+          mt-10
+          flex
+          justify-center
+          gap-3
+        ">
+
+          {/* SKIP */}
 
           <button
+            type="button"
             onClick={skipQuestion}
+            disabled={
+              questions.length === 0 ||
+              isSubmitting
+            }
             className="
-              px-8
-              py-3
-              rounded-xl
+              rounded-lg
               border
-              border-gray-700
-              hover:bg-gray-800
-              transition-all
+              border-slate-700
+              bg-slate-900
+              px-5
+              py-2.5
+              text-sm
+              font-medium
+              text-slate-300
+              transition
+              hover:border-slate-600
+              hover:bg-slate-800
+              hover:text-white
+              disabled:cursor-not-allowed
+              disabled:opacity-50
             "
           >
             Skip
           </button>
 
+          {/* SUBMIT */}
+
           <button
+            type="button"
             onClick={submitAnswer}
+            disabled={
+              questions.length === 0 ||
+              isSubmitting ||
+              !isRecording
+            }
             className="
               flex
               items-center
               gap-2
+              rounded-lg
               bg-blue-600
-              hover:bg-blue-700
-              px-8
-              py-3
-              rounded-xl
-              transition-all
+              px-5
+              py-2.5
+              text-sm
+              font-medium
+              text-white
+              transition
+              hover:bg-blue-500
+              disabled:cursor-not-allowed
+              disabled:opacity-50
             "
           >
-            Submit Answer
+            {isSubmitting
+              ? "Submitting..."
+              : "Submit Answer"}
 
-            <ArrowRight size={18} />
+            {!isSubmitting && (
+              <ArrowRight
+                size={16}
+                strokeWidth={2}
+              />
+            )}
 
           </button>
 
-        </div>
+        </section>
 
       </div>
+
     </div>
   );
 }
+

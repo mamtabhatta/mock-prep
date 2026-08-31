@@ -1,56 +1,114 @@
 import ScoreBar from "./ScoreBar";
 
-export default function QuestionFeedbackCard({ question }) {
-  return (
-    <div className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm p-6">
+export default function QuestionFeedbackCard({ session }) {
 
-      {/* Question */}
-      <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
-        {question.title}
-      </h2>
+    const questions = session.questions || [];
+    const answers = session.answers || [];
 
+    const aiFeedback =
+        session.feedbackReport?.aiFeedbackJson || {};
 
-      {/* Answer */}
-      <div className="mt-3">
-        <p className="text-sm leading-6 text-gray-700 dark:text-gray-300">
-          "{question.answer.before}{" "}
-          <span className="rounded bg-yellow-200 dark:bg-yellow-500/30 px-1 py-0.5 text-yellow-900 dark:text-yellow-300">
-            {question.answer.highlight}
-          </span>{" "}
-          {question.answer.after}"
-        </p>
-      </div>
+    const answerFeedback =
+        Array.isArray(aiFeedback.answer_feedback)
+            ? aiFeedback.answer_feedback
+            : [];
 
+    const getTranscript = (answer) => {
+        return (
+            answer?.transcription ||
+            answer?.transcript ||
+            answer?.answer ||
+            answer?.text ||
+            "No transcript available."
+        );
+    };
 
-      {/* Scores */}
-      <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+    const getScore = (feedback) => {
 
-        <ScoreBar
-          title="Structure"
-          score={question.structure}
-          color="green"
-        />
+        const rawScore =
+            feedback?.score ??
+            feedback?.overall_score ??
+            feedback?.overallScore ??
+            0;
 
-        <ScoreBar
-          title="Content"
-          score={question.content}
-          color="orange"
-        />
+        const score = Number(rawScore);
 
-        <ScoreBar
-          title="Language"
-          score={question.language}
-          color="blue"
-        />
+        if (isNaN(score)) {
+            return 0;
+        }
 
-        <ScoreBar
-          title="Confidence"
-          score={question.confidence}
-          color="green"
-        />
+        return score > 10
+            ? score / 10
+            : score;
+    };
 
-      </div>
+    return (
+        <div className="mt-6 space-y-6">
 
-    </div>
-  );
-} 
+            {questions.map((question) => {
+
+                const answer = answers.find(
+                    (item) =>
+                        String(item.questionId) ===
+                        String(question.id)
+                );
+
+                const feedback = answerFeedback.find(
+                    (item) =>
+                        String(item.question_id) ===
+                        String(question.id)
+                );
+
+                if (!answer && !feedback) {
+                    return null;
+                }
+
+                const score = getScore(feedback);
+
+                return (
+                    <div
+                        key={question.id}
+                        className="bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 rounded-2xl shadow-sm p-6"
+                    >
+
+                        <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
+                            {question.text || "Question"}
+                        </h2>
+
+                        <div className="mt-3">
+                            <p className="text-sm leading-6 text-gray-700 dark:text-gray-300">
+                                "{getTranscript(answer)}"
+                            </p>
+                        </div>
+
+                        <div className="mt-5 grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+
+                            <ScoreBar
+                                title="Structure"
+                                score={score}
+                            />
+
+                            <ScoreBar
+                                title="Content"
+                                score={score}
+                            />
+
+                            <ScoreBar
+                                title="Language"
+                                score={score}
+                            />
+
+                            <ScoreBar
+                                title="Confidence"
+                                score={score}
+                            />
+
+                        </div>
+
+                    </div>
+                );
+            })}
+
+        </div>
+    );
+}

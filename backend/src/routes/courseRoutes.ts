@@ -121,7 +121,6 @@ router.get(
 router.get(
     "/courses",
     authenticate,
-    authorize("super_admin"),
     getAllCourses
 );
 

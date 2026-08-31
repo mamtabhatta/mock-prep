@@ -2,86 +2,192 @@ import { GraduationCap, Wrench } from "lucide-react";
 import { Link } from "react-router-dom";
 
 function Entry() {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-slate-100 to-slate-200 flex items-center justify-center px-6">
-      <div className="w-full max-w-5xl">
+    return (
+        <div className="flex min-h-screen items-center justify-center bg-slate-50 px-6 py-10 transition-colors duration-300 dark:bg-slate-950">
+            <div className="w-full max-w-4xl">
 
-        {/* Logo */}
-        <div className="flex flex-col items-center mb-12">
-          <div className="flex items-center gap-3 mb-5">
-            <div className="w-12 h-12 rounded-xl bg-blue-600 flex items-center justify-center text-white text-xl font-bold shadow-lg">
-              M
+                {/* Logo & Header */}
+                <div className="mb-10 text-center">
+
+                    <div className="mb-6 flex items-center justify-center gap-2.5">
+                        <div
+                            className="
+                                flex
+                                h-9
+                                w-9
+                                items-center
+                                justify-center
+                                rounded-lg
+                                bg-blue-600
+                                text-sm
+                                font-bold
+                                text-white
+                                shadow-sm
+                            "
+                        >
+                            M
+                        </div>
+
+                        <h1 className="text-xl font-semibold tracking-tight text-slate-900 dark:text-white">
+                            MockPrep
+                        </h1>
+                    </div>
+
+                    <h2 className="text-3xl font-semibold tracking-tight text-slate-900 dark:text-white">
+                        Welcome back
+                    </h2>
+
+                    <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+                        Choose how you'd like to continue
+                    </p>
+                </div>
+
+                {/* Cards */}
+                <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+
+                    {/* Student */}
+                    <Link
+                        to="/signup"
+                        className="
+                            group
+                            block
+                            rounded-2xl
+                            border
+                            border-slate-200
+                            bg-white
+                            p-6
+                            shadow-sm
+                            transition-all
+                            duration-200
+                            hover:-translate-y-0.5
+                            hover:border-blue-300
+                            hover:shadow-md
+                            dark:border-slate-800
+                            dark:bg-slate-900
+                            dark:hover:border-blue-700
+                            dark:hover:shadow-black/20
+                        "
+                    >
+                        <div
+                            className="
+                                mb-5
+                                flex
+                                h-11
+                                w-11
+                                items-center
+                                justify-center
+                                rounded-xl
+                                bg-slate-100
+                                text-slate-600
+                                dark:bg-slate-800
+                                dark:text-slate-300
+                            "
+                        >
+                            <GraduationCap
+                                size={22}
+                                strokeWidth={1.8}
+                            />
+                        </div>
+
+                        <h3 className="mb-2 text-lg font-semibold text-slate-900 dark:text-white">
+                            I'm a Student
+                        </h3>
+
+                        <p className="text-sm leading-6 text-slate-500 dark:text-slate-400">
+                            Practice interviews and IELTS speaking tests with
+                            AI-powered feedback to improve your confidence.
+                        </p>
+
+                        <span
+                            className="
+                                mt-5
+                                inline-flex
+                                items-center
+                                text-sm
+                                font-medium
+                                text-blue-600
+                                transition
+                                group-hover:gap-1
+                                dark:text-blue-400
+                            "
+                        >
+                            Continue as student
+                            <span className="ml-1">→</span>
+                        </span>
+                    </Link>
+
+                    {/* Admin */}
+                    <a
+                        href="http://localhost:5174/admin/dashboard"
+                        className="
+                            group
+                            block
+                            rounded-2xl
+                            border
+                            border-blue-600
+                            bg-blue-600
+                            p-6
+                            text-white
+                            shadow-sm
+                            transition-all
+                            duration-200
+                            hover:-translate-y-0.5
+                            hover:bg-blue-700
+                            hover:shadow-md
+                            dark:border-blue-500
+                            dark:bg-blue-600
+                            dark:hover:bg-blue-500
+                        "
+                    >
+                        <div
+                            className="
+                                mb-5
+                                flex
+                                h-11
+                                w-11
+                                items-center
+                                justify-center
+                                rounded-xl
+                                bg-blue-500
+                                text-white
+                                dark:bg-blue-500
+                            "
+                        >
+                            <Wrench
+                                size={21}
+                                strokeWidth={1.8}
+                            />
+                        </div>
+
+                        <h3 className="mb-2 text-lg font-semibold">
+                            Super Admin
+                        </h3>
+
+                        <p className="text-sm leading-6 text-blue-100">
+                            Manage universities, interview questions, IELTS
+                            modules, and AI evaluation settings.
+                        </p>
+
+                        <span
+                            className="
+                                mt-5
+                                inline-flex
+                                items-center
+                                text-sm
+                                font-medium
+                                transition
+                                group-hover:gap-1
+                            "
+                        >
+                            Continue as admin
+                            <span className="ml-1">→</span>
+                        </span>
+                    </a>
+
+                </div>
             </div>
-
-            <h1 className="text-4xl font-bold text-slate-900">
-              MockPrep
-            </h1>
-          </div>
-
-          <h2 className="text-5xl font-bold text-slate-900">
-            Welcome back
-          </h2>
-
-          <p className="mt-3 text-lg text-slate-500">
-            Choose how you'd like to continue
-          </p>
         </div>
-
-        {/* Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-
-          {/* Student */}
-          <Link
-            to="/signup"
-            className="block bg-white rounded-3xl p-8 border border-gray-200 shadow-lg hover:shadow-2xl hover:-translate-y-1 transition-all duration-300"
-          >
-            <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center mb-8">
-              <GraduationCap size={32} className="text-slate-700" />
-            </div>
-
-            <h3 className="text-3xl font-bold text-slate-900 mb-4">
-              I'm a Student
-            </h3>
-
-            <p className="text-slate-500 leading-8 text-lg">
-              Practice interviews & IELTS speaking tests with AI-powered
-              feedback to improve your confidence.
-            </p>
-
-            <span className="inline-block mt-8 text-blue-600 font-semibold text-lg hover:underline">
-              Continue as student →
-            </span>
-          </Link>
-
-          {/* Admin */}
-          {/* Admin */}
-          <a
-            href="http://localhost:5174/admin/dashboard"
-            className="block rounded-3xl bg-blue-600 p-8 text-white shadow-2xl transition-all duration-300 hover:-translate-y-1 hover:shadow-blue-300"
-          >
-            <div className="mb-8 flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-500">
-              <Wrench size={30} />
-            </div>
-
-            <h3 className="mb-4 text-3xl font-bold">
-              Super Admin
-            </h3>
-
-            <p className="text-lg leading-8 text-blue-100">
-              Manage universities, interview questions, IELTS modules and AI
-              evaluation settings.
-            </p>
-
-            <span className="mt-8 inline-block text-lg font-semibold hover:underline">
-              Continue as admin →
-            </span>
-          </a>
-          {/* </Link> */}
-
-        </div>
-      </div>
-    </div>
-  );
+    );
 }
 
 export default Entry;

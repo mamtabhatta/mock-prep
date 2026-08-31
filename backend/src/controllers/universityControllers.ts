@@ -127,3 +127,20 @@ export const deleteUniversity = async (
         next(error);
     }
 };
+export const getUniversities = async (
+    req: Request,
+    res: Response,
+    next: NextFunction
+) => {
+    try {
+        const universities =
+            await universityServices.getAllUniversities();
+
+        return res.status(200).json({
+            success: true,
+            data: universities,
+        });
+    } catch (error) {
+        next(error);
+    }
+};
