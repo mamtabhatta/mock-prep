@@ -1,0 +1,1 @@
+ALTER TABLE "sessions" ADD COLUMN "interview_format" text;

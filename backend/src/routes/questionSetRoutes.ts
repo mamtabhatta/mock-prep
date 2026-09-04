@@ -58,6 +58,22 @@ router.post(
     }),
     createQuestionSet
 );
+
+/**
+ * @openapi
+ * /question-sets:
+ *   get:
+ *     tags:
+ *       - Question Sets
+ *     summary: Get all question sets
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Question sets retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ */
 router.get(
     "/question-sets",
     authenticate,

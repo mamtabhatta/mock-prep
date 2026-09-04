@@ -1,16 +1,34 @@
-import { useEffect, useState } from "react";
+import {
+    useEffect,
+    useState,
+} from "react";
+
 import UniversityCard from "../../components/practice/UniversityCard";
+
 import CourseInput from "../../components/practice/CourseInput";
+
 import InterviewFormat from "../../components/practice/InterviewFormat";
+
 import DocumentUpload from "../../components/practice/DocumentUpload";
+
 import UploadedFile from "../../components/practice/UploadFile";
+
 import ContinueButton from "../../components/practice/ContinueInterview";
+
 import api from "../../api/api";
 
+
 function SetupInterview() {
-    const [universities, setUniversities] = useState([]);
-    const [courses, setCourses] = useState([]);
-    const [questionSets, setQuestionSets] = useState([]);
+
+    const [universities, setUniversities] =
+        useState([]);
+
+    const [courses, setCourses] =
+        useState([]);
+
+    const [questionSets, setQuestionSets] =
+        useState([]);
+
 
     const [selectedUniversity, setSelectedUniversity] =
         useState(null);
@@ -21,267 +39,601 @@ function SetupInterview() {
     const [selectedQuestionSet, setSelectedQuestionSet] =
         useState("");
 
-    const [format, setFormat] = useState("Panel");
-    const [file, setFile] = useState(null);
 
-    const [loading, setLoading] = useState(true);
+    const [format, setFormat] =
+        useState("Panel");
+
+    const [file, setFile] =
+        useState(null);
+
+
+    const [loading, setLoading] =
+        useState(true);
+
     const [loadingCourses, setLoadingCourses] =
         useState(false);
+
     const [loadingQuestionSets, setLoadingQuestionSets] =
         useState(false);
 
-    const [error, setError] = useState("");
 
-    // Fetch universities
+    const [error, setError] =
+        useState("");
+
+
+    // ============================================
+    // FETCH UNIVERSITIES
+    // ============================================
+
     useEffect(() => {
-        const fetchUniversities = async () => {
-            try {
-                setLoading(true);
-                setError("");
 
-                const response =
-                    await api.get("/universities");
+        const fetchUniversities =
+            async () => {
 
-                setUniversities(
-                    response.data.data || []
-                );
-            } catch (error) {
-                console.error(
-                    "Failed to fetch universities:",
-                    error
-                );
+                try {
 
-                setError(
-                    error.response?.data?.message ||
-                    "Failed to load universities."
-                );
-            } finally {
-                setLoading(false);
-            }
-        };
+                    setLoading(true);
+
+                    setError("");
+
+
+                    const response =
+                        await api.get(
+                            "/universities"
+                        );
+
+
+                    setUniversities(
+                        response.data.data || []
+                    );
+
+                } catch (error) {
+
+                    console.error(
+                        "Failed to fetch universities:",
+                        error
+                    );
+
+
+                    setError(
+                        error.response?.data?.error
+                            ?.message ||
+                        error.response?.data?.message ||
+                        "Failed to load universities."
+                    );
+
+                } finally {
+
+                    setLoading(false);
+
+                }
+
+            };
+
 
         fetchUniversities();
+
     }, []);
 
-    // Fetch courses when university changes
+
+    // ============================================
+    // FETCH COURSES
+    // ============================================
+
     useEffect(() => {
+
         if (!selectedUniversity) {
+
             setCourses([]);
+
             setSelectedCourse("");
+
             setQuestionSets([]);
+
             setSelectedQuestionSet("");
+
             return;
+
         }
 
-        const fetchCourses = async () => {
-            try {
-                setLoadingCourses(true);
-                setError("");
 
-                const response = await api.get(
-                    `/courses?universityId=${selectedUniversity}`
-                );
+        const fetchCourses =
+            async () => {
 
-                const courseData =
-                    response.data.data || [];
+                try {
 
-                setCourses(courseData);
-                setSelectedCourse("");
-                setQuestionSets([]);
-                setSelectedQuestionSet("");
-            } catch (error) {
-                console.error(
-                    "Failed to fetch courses:",
-                    error
-                );
+                    setLoadingCourses(true);
 
-                setError(
-                    error.response?.data?.message ||
-                    "Failed to load courses."
-                );
-            } finally {
-                setLoadingCourses(false);
-            }
-        };
+                    setError("");
+
+
+                    const response =
+                        await api.get(
+                            `/courses?universityId=${selectedUniversity}`
+                        );
+
+
+                    const courseData =
+                        response.data.data || [];
+
+
+                    setCourses(
+                        courseData
+                    );
+
+
+                    setSelectedCourse("");
+
+                    setQuestionSets([]);
+
+                    setSelectedQuestionSet("");
+
+                } catch (error) {
+
+                    console.error(
+                        "Failed to fetch courses:",
+                        error
+                    );
+
+
+                    setError(
+                        error.response?.data?.error
+                            ?.message ||
+                        error.response?.data?.message ||
+                        "Failed to load courses."
+                    );
+
+                } finally {
+
+                    setLoadingCourses(false);
+
+                }
+
+            };
+
 
         fetchCourses();
-    }, [selectedUniversity]);
 
-    // Fetch question sets when course changes
+    }, [
+        selectedUniversity,
+    ]);
+
+
+    // ============================================
+    // FETCH QUESTION SETS
+    // ============================================
+
     useEffect(() => {
+
         if (!selectedCourse) {
+
             setQuestionSets([]);
+
             setSelectedQuestionSet("");
+
             return;
+
         }
 
-        const fetchQuestionSets = async () => {
-            try {
-                setLoadingQuestionSets(true);
-                setError("");
 
-                const response =
-                    await api.get(
-                        `/question-sets?courseId=${selectedCourse}`
+        const fetchQuestionSets =
+            async () => {
+
+                try {
+
+                    setLoadingQuestionSets(
+                        true
                     );
 
-                const sets =
-                    response.data.data || [];
+                    setError("");
 
-                const activeSets =
-                    sets.filter(
-                        (set) => set.isActive
+
+                    const response =
+                        await api.get(
+                            `/question-sets?courseId=${selectedCourse}`
+                        );
+
+
+                    const sets =
+                        response.data.data || [];
+
+
+                    const activeSets =
+                        sets.filter(
+                            (set) =>
+                                set.isActive
+                        );
+
+
+                    setQuestionSets(
+                        activeSets
                     );
 
-                setQuestionSets(activeSets);
 
-                if (activeSets.length > 0) {
-                    setSelectedQuestionSet(
-                        activeSets[0].id
+                    if (
+                        activeSets.length > 0
+                    ) {
+
+                        setSelectedQuestionSet(
+                            activeSets[0].id
+                        );
+
+                    } else {
+
+                        setSelectedQuestionSet(
+                            ""
+                        );
+
+                    }
+
+                } catch (error) {
+
+                    console.error(
+                        "Failed to fetch question sets:",
+                        error
                     );
-                } else {
-                    setSelectedQuestionSet("");
+
+
+                    setError(
+                        error.response?.data?.error
+                            ?.message ||
+                        error.response?.data?.message ||
+                        "Failed to load question sets."
+                    );
+
+                } finally {
+
+                    setLoadingQuestionSets(
+                        false
+                    );
+
                 }
-            } catch (error) {
-                console.error(
-                    "Failed to fetch question sets:",
-                    error
-                );
 
-                setError(
-                    error.response?.data?.message ||
-                    "Failed to load question sets."
-                );
-            } finally {
-                setLoadingQuestionSets(false);
-            }
-        };
+            };
+
 
         fetchQuestionSets();
-    }, [selectedCourse]);
+
+    }, [
+        selectedCourse,
+    ]);
+
+
+    // ============================================
+    // UI
+    // ============================================
 
     return (
-        <div className="min-h-screen bg-slate-50 px-6 py-8 transition-colors duration-300 dark:bg-slate-950">
-            <div className="mx-auto max-w-6xl">
 
-                <div className="mb-8">
-                    <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white sm:text-3xl">
+        <div className="
+            min-h-screen
+            bg-slate-50
+            px-6
+            py-8
+            transition-colors
+            duration-300
+            dark:bg-slate-950
+        ">
+
+            <div className="
+                mx-auto
+                max-w-6xl
+            ">
+
+
+                <div className="
+                    mb-8
+                ">
+
+                    <h1 className="
+                        text-2xl
+                        font-semibold
+                        tracking-tight
+                        text-slate-900
+                        dark:text-white
+                        sm:text-3xl
+                    ">
                         Set up your interview
                     </h1>
 
-                    <p className="mt-2 text-sm text-slate-500 dark:text-slate-400">
+
+                    <p className="
+                        mt-2
+                        text-sm
+                        text-slate-500
+                        dark:text-slate-400
+                    ">
                         Choose your university, select your course,
                         and upload any relevant documents.
                     </p>
+
                 </div>
 
-                <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
 
-                    {/* Universities */}
-                    <div className="lg:col-span-7">
+                <div className="
+                    grid
+                    grid-cols-1
+                    gap-6
+                    lg:grid-cols-12
+                ">
 
-                        <div className="mb-4 flex items-center gap-3">
-                            <span className="flex h-6 w-6 items-center justify-center rounded-full bg-slate-900 text-xs font-semibold text-white dark:bg-white dark:text-slate-900">
+
+                    {/* ======================================
+                        UNIVERSITIES
+                    ====================================== */}
+
+                    <div className="
+                        lg:col-span-7
+                    ">
+
+                        <div className="
+                            mb-4
+                            flex
+                            items-center
+                            gap-3
+                        ">
+
+                            <span className="
+                                flex
+                                h-6
+                                w-6
+                                items-center
+                                justify-center
+                                rounded-full
+                                bg-slate-900
+                                text-xs
+                                font-semibold
+                                text-white
+                                dark:bg-white
+                                dark:text-slate-900
+                            ">
                                 1
                             </span>
 
-                            <h2 className="text-xs font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+
+                            <h2 className="
+                                text-xs
+                                font-semibold
+                                uppercase
+                                tracking-wider
+                                text-slate-500
+                                dark:text-slate-400
+                            ">
                                 Choose University
                             </h2>
+
                         </div>
 
+
                         {loading && (
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                {[1, 2, 3, 4].map((item) => (
-                                    <div
-                                        key={item}
-                                        className="h-32 animate-pulse rounded-xl border border-slate-200 bg-white dark:border-slate-800 dark:bg-slate-900"
-                                    />
-                                ))}
-                            </div>
-                        )}
 
-                        {!loading && error && (
-                            <div className="rounded-xl border border-red-200 bg-red-50 p-4 text-sm text-red-600 dark:border-red-900/50 dark:bg-red-950/30 dark:text-red-400">
-                                {error}
-                            </div>
-                        )}
+                            <div className="
+                                grid
+                                grid-cols-1
+                                gap-4
+                                sm:grid-cols-2
+                            ">
 
-                        {!loading && !error && (
-                            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                                {universities.map(
-                                    (university) => (
-                                        <UniversityCard
-                                            key={university.id}
-                                            code={university.name
-                                                .substring(
-                                                    0,
-                                                    3
-                                                )
-                                                .toUpperCase()}
-                                            name={
-                                                university.name
-                                            }
-                                            city={
-                                                university.country
-                                            }
-                                            selected={
-                                                selectedUniversity ===
-                                                university.id
-                                            }
-                                            onClick={() =>
-                                                setSelectedUniversity(
-                                                    university.id
-                                                )
-                                            }
+                                {[1, 2, 3, 4].map(
+                                    (item) => (
+
+                                        <div
+                                            key={item}
+                                            className="
+                                                h-32
+                                                animate-pulse
+                                                rounded-xl
+                                                border
+                                                border-slate-200
+                                                bg-white
+                                                dark:border-slate-800
+                                                dark:bg-slate-900
+                                            "
                                         />
+
                                     )
                                 )}
+
                             </div>
+
                         )}
+
+
+                        {!loading &&
+                            error && (
+
+                                <div className="
+                                    rounded-xl
+                                    border
+                                    border-red-200
+                                    bg-red-50
+                                    p-4
+                                    text-sm
+                                    text-red-600
+                                    dark:border-red-900/50
+                                    dark:bg-red-950/30
+                                    dark:text-red-400
+                                ">
+                                    {error}
+                                </div>
+
+                            )}
+
+
+                        {!loading &&
+                            !error && (
+
+                                <div className="
+                                    grid
+                                    grid-cols-1
+                                    gap-4
+                                    sm:grid-cols-2
+                                ">
+
+                                    {universities.map(
+                                        (
+                                            university
+                                        ) => (
+
+                                            <UniversityCard
+                                                key={
+                                                    university.id
+                                                }
+
+                                                code={
+                                                    university.name
+                                                        .substring(
+                                                            0,
+                                                            3
+                                                        )
+                                                        .toUpperCase()
+                                                }
+
+                                                name={
+                                                    university.name
+                                                }
+
+                                                city={
+                                                    university.country
+                                                }
+
+                                                selected={
+                                                    selectedUniversity ===
+                                                    university.id
+                                                }
+
+                                                onClick={() =>
+                                                    setSelectedUniversity(
+                                                        university.id
+                                                    )
+                                                }
+                                            />
+
+                                        )
+                                    )}
+
+                                </div>
+
+                            )}
+
                     </div>
 
-                    {/* Interview Details */}
-                    <div className="lg:col-span-5">
 
-                        <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm dark:border-slate-800 dark:bg-slate-900">
+                    {/* ======================================
+                        INTERVIEW DETAILS
+                    ====================================== */}
 
-                            <div className="mb-6 border-b border-slate-100 pb-5 dark:border-slate-800">
-                                <h2 className="text-sm font-semibold text-slate-900 dark:text-white">
+                    <div className="
+                        lg:col-span-5
+                    ">
+
+                        <div className="
+                            rounded-2xl
+                            border
+                            border-slate-200
+                            bg-white
+                            p-6
+                            shadow-sm
+                            dark:border-slate-800
+                            dark:bg-slate-900
+                        ">
+
+
+                            <div className="
+                                mb-6
+                                border-b
+                                border-slate-100
+                                pb-5
+                                dark:border-slate-800
+                            ">
+
+                                <h2 className="
+                                    text-sm
+                                    font-semibold
+                                    text-slate-900
+                                    dark:text-white
+                                ">
                                     Interview details
                                 </h2>
 
-                                <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+
+                                <p className="
+                                    mt-1
+                                    text-xs
+                                    text-slate-500
+                                    dark:text-slate-400
+                                ">
                                     Complete the details below to continue.
                                 </p>
+
                             </div>
 
-                            {/* Course */}
+
+                            {/* COURSE */}
+
                             {loadingCourses ? (
-                                <div className="rounded-lg bg-slate-100 p-3 text-sm text-slate-500 dark:bg-slate-800 dark:text-slate-400">
+
+                                <div className="
+                                    rounded-lg
+                                    bg-slate-100
+                                    p-3
+                                    text-sm
+                                    text-slate-500
+                                    dark:bg-slate-800
+                                    dark:text-slate-400
+                                ">
                                     Loading courses...
                                 </div>
+
                             ) : (
+
                                 <select
-                                    value={selectedCourse}
+                                    value={
+                                        selectedCourse
+                                    }
+
                                     onChange={(e) =>
                                         setSelectedCourse(
                                             e.target.value
                                         )
                                     }
+
                                     disabled={
                                         !selectedUniversity
                                     }
-                                    className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+
+                                    className="
+                                        w-full
+                                        rounded-lg
+                                        border
+                                        border-slate-300
+                                        bg-white
+                                        px-3
+                                        py-2.5
+                                        text-sm
+                                        text-slate-900
+                                        outline-none
+                                        focus:border-blue-500
+                                        dark:border-slate-700
+                                        dark:bg-slate-800
+                                        dark:text-white
+                                    "
                                 >
+
                                     <option value="">
+
                                         {!selectedUniversity
                                             ? "Select university first"
                                             : "Select course"}
+
                                     </option>
 
+
                                     {courses.map(
-                                        (item) => (
+                                        (
+                                            item
+                                        ) => (
+
                                             <option
                                                 key={
                                                     item.id
@@ -292,36 +644,70 @@ function SetupInterview() {
                                             >
                                                 {item.name}
                                             </option>
+
                                         )
                                     )}
+
                                 </select>
+
                             )}
 
-                            {/* Question Set */}
+
+                            {/* QUESTION SET */}
+
                             {selectedCourse && (
-                                <div className="mt-4">
+
+                                <div className="
+                                    mt-4
+                                ">
+
                                     <select
                                         value={
                                             selectedQuestionSet
                                         }
+
                                         onChange={(e) =>
                                             setSelectedQuestionSet(
                                                 e.target.value
                                             )
                                         }
+
                                         disabled={
                                             loadingQuestionSets
                                         }
-                                        className="w-full rounded-lg border border-slate-300 bg-white px-3 py-2.5 text-sm text-slate-900 outline-none focus:border-blue-500 dark:border-slate-700 dark:bg-slate-800 dark:text-white"
+
+                                        className="
+                                            w-full
+                                            rounded-lg
+                                            border
+                                            border-slate-300
+                                            bg-white
+                                            px-3
+                                            py-2.5
+                                            text-sm
+                                            text-slate-900
+                                            outline-none
+                                            focus:border-blue-500
+                                            dark:border-slate-700
+                                            dark:bg-slate-800
+                                            dark:text-white
+                                        "
                                     >
+
                                         <option value="">
+
                                             {loadingQuestionSets
                                                 ? "Loading question sets..."
                                                 : "Select question set"}
+
                                         </option>
 
+
                                         {questionSets.map(
-                                            (set) => (
+                                            (
+                                                set
+                                            ) => (
+
                                                 <option
                                                     key={
                                                         set.id
@@ -332,56 +718,118 @@ function SetupInterview() {
                                                 >
                                                     {set.name}
                                                 </option>
+
                                             )
                                         )}
+
                                     </select>
+
                                 </div>
+
                             )}
 
-                            {/* Interview Format */}
-                            <div className="mt-6">
+
+                            {/* INTERVIEW FORMAT */}
+
+                            <div className="
+                                mt-6
+                            ">
+
                                 <InterviewFormat
-                                    value={format}
-                                    onChange={setFormat}
+                                    value={
+                                        format
+                                    }
+                                    onChange={
+                                        setFormat
+                                    }
                                 />
+
                             </div>
 
-                            {/* Document Upload */}
-                            <div className="mt-6">
+
+                            {/* DOCUMENT UPLOAD */}
+
+                            <div className="
+                                mt-6
+                            ">
+
                                 <DocumentUpload
-                                    onFileChange={setFile}
+                                    onFileChange={
+                                        setFile
+                                    }
                                 />
+
                             </div>
+
+
+                            {/* UPLOADED FILE */}
 
                             {file && (
-                                <div className="mt-4">
+
+                                <div className="
+                                    mt-4
+                                ">
+
                                     <UploadedFile
-                                        file={file}
+                                        file={
+                                            file
+                                        }
                                     />
+
                                 </div>
+
                             )}
 
-                            {/* Continue */}
-                            <div className="mt-6 border-t border-slate-100 pt-5 dark:border-slate-800">
+
+                            {/* CONTINUE */}
+
+                            <div className="
+                                mt-6
+                                border-t
+                                border-slate-100
+                                pt-5
+                                dark:border-slate-800
+                            ">
+
                                 <ContinueButton
+
                                     universityId={
                                         selectedUniversity
                                     }
+
                                     courseId={
                                         selectedCourse
                                     }
+
                                     questionSetId={
                                         selectedQuestionSet
                                     }
+
+                                    format={
+                                        format
+                                    }
+
+                                    file={
+                                        file
+                                    }
+
                                 />
+
                             </div>
 
                         </div>
+
                     </div>
+
                 </div>
+
             </div>
+
         </div>
+
     );
+
 }
+
 
 export default SetupInterview;

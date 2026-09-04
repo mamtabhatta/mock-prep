@@ -1,23 +1,14 @@
 import { useEffect, useState } from "react";
-import {
-  Flame,
-  ArrowRight,
-  Loader2,
-} from "lucide-react";
+import { Flame, ArrowRight, Loader2 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import api from "../../api/api";
 
 export default function Dashboard() {
   const navigate = useNavigate();
-
   const [user, setUser] = useState(null);
   const [sessions, setSessions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
-
-  // ============================================
-  // LOAD USER
-  // ============================================
 
   useEffect(() => {
     const storedUser = localStorage.getItem("user");
@@ -31,10 +22,6 @@ export default function Dashboard() {
       }
     }
   }, []);
-
-  // ============================================
-  // FETCH SESSIONS
-  // ============================================
 
   useEffect(() => {
     const fetchSessions = async () => {
@@ -51,17 +38,12 @@ export default function Dashboard() {
         setSessions(sessionData);
       } catch (err) {
         console.error("Failed to fetch sessions:", err);
-
-        console.error(
-          "Backend response:",
-          err.response?.data
-        );
+        console.error("Backend response:", err.response?.data);
 
         if (err.response?.status === 401) {
           localStorage.removeItem("accessToken");
           localStorage.removeItem("refreshToken");
           localStorage.removeItem("user");
-
           navigate("/login");
           return;
         }
@@ -78,47 +60,92 @@ export default function Dashboard() {
     fetchSessions();
   }, [navigate]);
 
-  // ============================================
-  // USER NAME
-  // ============================================
+  const startSpeakingPractice = async () => {
+    try {
+      setError("");
+
+      const response = await api.post("/sessions", {
+        module: "speaking",
+        universityId: null,
+        courseId: null,
+        questionSetId: null,
+      });
+
+      console.log("Speaking session created:", response.data);
+
+      const sessionId = response.data?.data?.id;
+
+      if (!sessionId) {
+        throw new Error("Session ID was not returned.");
+      }
+
+      navigate(`/dashboard/speaking?sessionId=${sessionId}`);
+    } catch (err) {
+      console.error("Failed to create speaking session:", err);
+
+      setError(
+        err.response?.data?.message ||
+          "Unable to start speaking practice."
+      );
+    }
+  };
+
+  const isSubmittedSession = (session) => {
+    const isInterviewOrSpeaking =
+      session.module === "interview" ||
+      session.module === "university_interview" ||
+      session.module === "ielts" ||
+      session.module === "speaking";
+
+    const isCompleted =
+      session.status === "submitted" ||
+      session.status === "completed" ||
+      session.status === "scored" ||
+      session.status === "ai_reviewed";
+
+    return (
+      isInterviewOrSpeaking &&
+      isCompleted
+    );
+  };
+
+  const submittedSessions = sessions.filter(
+    isSubmittedSession
+  );
 
   const userName =
     user?.fullName ||
     user?.name ||
     "Student";
 
-  // ============================================
-  // SESSION STATISTICS
-  // ============================================
+  const totalSessions =
+    submittedSessions.length;
 
-  const totalSessions = sessions.length;
+  const completedSessions =
+    submittedSessions.length;
 
-  const completedSessions = sessions.filter(
-    (session) =>
-      session.status === "submitted" ||
-      session.status === "scored" ||
-      session.status === "ai_reviewed"
-  ).length;
+  const interviewSessions =
+    submittedSessions.filter(
+      (session) =>
+        session.module === "interview" ||
+        session.module ===
+          "university_interview"
+    ).length;
 
-  const interviewSessions = sessions.filter(
-    (session) =>
-      session.module === "interview"
-  ).length;
-
-  const speakingSessions = sessions.filter(
-    (session) =>
-      session.module === "ielts" ||
-      session.module === "speaking"
-  ).length;
-
-  // ============================================
-  // FORMAT MODULE
-  // ============================================
+  const speakingSessions =
+    submittedSessions.filter(
+      (session) =>
+        session.module === "ielts" ||
+        session.module === "speaking"
+    ).length;
 
   const getModuleName = (module) => {
     if (!module) return "Practice";
 
-    if (module === "interview") {
+    if (
+      module === "interview" ||
+      module === "university_interview"
+    ) {
       return "University Interview";
     }
 
@@ -132,55 +159,39 @@ export default function Dashboard() {
     return module;
   };
 
-  // ============================================
-  // FORMAT STATUS
-  // ============================================
-
   const getStatusText = (status) => {
-    if (!status) return "In progress";
+    if (!status) return "Completed";
 
     switch (status) {
       case "in_progress":
         return "In progress";
-
       case "submitted":
         return "Submitted";
-
+      case "completed":
+        return "Completed";
       case "scored":
         return "Scored";
-
       case "ai_reviewed":
         return "AI reviewed";
-
       default:
         return status.replaceAll("_", " ");
     }
   };
 
-  // ============================================
-  // STATUS STYLE
-  // ============================================
-
   const getStatusStyle = (status) => {
     switch (status) {
+      case "completed":
       case "scored":
       case "ai_reviewed":
         return "bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300";
-
       case "submitted":
         return "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300";
-
       case "in_progress":
         return "bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-300";
-
       default:
         return "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
     }
   };
-
-  // ============================================
-  // FORMAT DATE
-  // ============================================
 
   const formatDate = (date) => {
     if (!date) return "";
@@ -201,25 +212,23 @@ export default function Dashboard() {
     );
   };
 
-  // ============================================
-  // RECENT SESSIONS
-  // ============================================
-
-  const recentSessions = [...sessions]
+  const recentSessions = [...submittedSessions]
     .sort(
       (a, b) =>
         new Date(
-          b.createdAt || b.startedAt
+          b.submittedAt ||
+            b.completedAt ||
+            b.createdAt ||
+            b.startedAt
         ) -
         new Date(
-          a.createdAt || a.startedAt
+          a.submittedAt ||
+            a.completedAt ||
+            a.createdAt ||
+            a.startedAt
         )
     )
     .slice(0, 3);
-
-  // ============================================
-  // LOADING
-  // ============================================
 
   if (loading) {
     return (
@@ -237,13 +246,7 @@ export default function Dashboard() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-gray-950 p-6 lg:p-8 ml-4 transition-colors duration-300">
-
-      {/* ========================================
-          HEADER
-      ======================================== */}
-
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-
         <div>
           <h1 className="text-2xl font-semibold tracking-tight text-slate-900 dark:text-white">
             Namaste, {userName} 👋
@@ -265,13 +268,7 @@ export default function Dashboard() {
               }`
             : "Start practicing"}
         </div>
-
       </div>
-
-
-      {/* ========================================
-          ERROR
-      ======================================== */}
 
       {error && (
         <div className="mt-6 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-600 dark:border-red-900 dark:bg-red-950/30 dark:text-red-400">
@@ -279,17 +276,8 @@ export default function Dashboard() {
         </div>
       )}
 
-
-      {/* ========================================
-          STATS
-      ======================================== */}
-
       <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
-
-        {/* Total Sessions */}
-
         <div className="rounded-xl border border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-gray-400">
             Total Sessions
           </p>
@@ -299,16 +287,11 @@ export default function Dashboard() {
           </h2>
 
           <p className="mt-1 text-xs font-medium text-slate-500 dark:text-gray-400">
-            All practice sessions
+            Completed practice sessions
           </p>
-
         </div>
 
-
-        {/* Completed */}
-
         <div className="rounded-xl border border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-gray-400">
             Completed
           </p>
@@ -320,14 +303,9 @@ export default function Dashboard() {
           <p className="mt-1 text-xs font-medium text-green-600 dark:text-green-400">
             Submitted sessions
           </p>
-
         </div>
 
-
-        {/* Interviews */}
-
         <div className="rounded-xl border border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-gray-400">
             Interviews
           </p>
@@ -339,14 +317,9 @@ export default function Dashboard() {
           <p className="mt-1 text-xs font-medium text-slate-500 dark:text-gray-400">
             University interview practice
           </p>
-
         </div>
 
-
-        {/* IELTS */}
-
         <div className="rounded-xl border border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-4 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-
           <p className="text-xs font-medium uppercase tracking-wide text-slate-500 dark:text-gray-400">
             IELTS Speaking
           </p>
@@ -358,27 +331,15 @@ export default function Dashboard() {
           <p className="mt-1 text-xs font-medium text-slate-500 dark:text-gray-400">
             Speaking practice sessions
           </p>
-
         </div>
-
       </div>
-
-
-      {/* ========================================
-          START PRACTICE
-      ======================================== */}
 
       <h2 className="mt-8 mb-4 text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-gray-400">
         Start Practice
       </h2>
 
-
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-
-        {/* University Interview */}
-
         <div className="rounded-xl bg-blue-600 p-5 text-white shadow-sm transition hover:-translate-y-1 hover:shadow-xl">
-
           <h2 className="text-lg font-semibold">
             University Interview
           </h2>
@@ -391,24 +352,16 @@ export default function Dashboard() {
 
           <button
             onClick={() =>
-              navigate(
-                "/dashboard/practice"
-              )
+              navigate("/dashboard/practice")
             }
             className="mt-5 inline-flex items-center gap-2 rounded-lg bg-white px-5 py-2.5 text-sm font-semibold text-blue-600 hover:bg-blue-50"
           >
             Start Interview
-
             <ArrowRight size={16} />
           </button>
-
         </div>
 
-
-        {/* IELTS */}
-
         <div className="rounded-xl border border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg">
-
           <h2 className="text-lg font-semibold text-slate-900 dark:text-white">
             IELTS Speaking
           </h2>
@@ -419,57 +372,33 @@ export default function Dashboard() {
           </p>
 
           <button
-            onClick={() =>
-              navigate(
-                "/dashboard/speaking"
-              )
-            }
+            onClick={startSpeakingPractice}
             className="mt-5 inline-flex items-center gap-2 rounded-lg bg-slate-100 dark:bg-gray-800 px-5 py-2.5 text-sm font-semibold text-slate-700 dark:text-white hover:bg-slate-200 dark:hover:bg-gray-700"
           >
             Start Practice
-
             <ArrowRight size={16} />
           </button>
-
         </div>
-
       </div>
 
-
-      {/* ========================================
-          RECENT SESSIONS
-      ======================================== */}
-
       <div className="mt-10 flex items-center justify-between">
-
         <h2 className="text-xs font-semibold uppercase tracking-widest text-slate-500 dark:text-gray-400">
           Recent Sessions
         </h2>
 
         <button
           onClick={() =>
-            navigate(
-              "/dashboard/reports"
-            )
+            navigate("/dashboard/reports")
           }
           className="inline-flex items-center gap-1 text-sm font-medium text-blue-600 dark:text-blue-400 hover:underline"
         >
           View All
-
           <ArrowRight size={15} />
         </button>
-
       </div>
 
-
-      {/* ========================================
-          SESSION CARDS
-      ======================================== */}
-
       {recentSessions.length === 0 ? (
-
         <div className="mt-4 rounded-xl border border-dashed border-slate-300 dark:border-gray-700 bg-white dark:bg-gray-900 p-8 text-center">
-
           <h3 className="text-base font-semibold text-slate-900 dark:text-white">
             No sessions yet
           </h3>
@@ -481,33 +410,23 @@ export default function Dashboard() {
 
           <button
             onClick={() =>
-              navigate(
-                "/dashboard/practice"
-              )
+              navigate("/dashboard/practice")
             }
             className="mt-5 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
           >
             Start Practice
-
             <ArrowRight size={16} />
           </button>
-
         </div>
-
       ) : (
-
         <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-3">
-
           {recentSessions.map(
             (session) => (
-
               <div
                 key={session.id}
                 className="rounded-xl border border-slate-200 dark:border-gray-800 bg-white dark:bg-gray-900 p-5 shadow-sm transition hover:-translate-y-1 hover:shadow-lg"
               >
-
                 <div className="flex items-start justify-between gap-3">
-
                   <h3 className="text-base font-semibold text-slate-900 dark:text-white">
                     {getModuleName(
                       session.module
@@ -523,24 +442,22 @@ export default function Dashboard() {
                       session.status
                     )}
                   </span>
-
                 </div>
-
 
                 <p className="mt-3 text-sm text-slate-500 dark:text-gray-400">
                   {formatDate(
-                    session.createdAt ||
+                    session.submittedAt ||
+                      session.completedAt ||
+                      session.createdAt ||
                       session.startedAt
                   )}
                 </p>
-
 
                 {session.universityId && (
                   <p className="mt-1 text-xs text-slate-400 dark:text-gray-500">
                     University selected
                   </p>
                 )}
-
 
                 <button
                   onClick={() =>
@@ -551,19 +468,13 @@ export default function Dashboard() {
                   className="mt-5 inline-flex items-center gap-1 text-sm font-medium text-blue-600 dark:text-blue-400"
                 >
                   View Session
-
                   <ArrowRight size={15} />
                 </button>
-
               </div>
-
             )
           )}
-
         </div>
-
       )}
-
     </div>
   );
 }

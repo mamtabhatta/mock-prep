@@ -1,3 +1,4 @@
+
 import crypto from "crypto";
 
 import { db, pool } from "../../db";
@@ -165,15 +166,16 @@ describe("Mocked Groq AI Services", () => {
             });
 
             const result =
-                await feedbackServices.generateFeedbackWithGroq(
-                    [
+                await feedbackServices.generateFeedbackWithGroq({
+                    interviewFormat: "1-on-1",
+                    transcripts: [
                         {
                             questionId: "question-1",
                             transcript:
                                 "I chose this university because of its strong academic reputation.",
                         },
-                    ]
-                );
+                    ],
+                });
 
             expect(
                 result.overall_score
@@ -188,7 +190,7 @@ describe("Mocked Groq AI Services", () => {
 
             expect(
                 call.messages[0].content
-            ).toBe(
+            ).toContain(
                 "TEST ACTIVE PROMPT: Evaluate clarity and credibility."
             );
         });
@@ -225,22 +227,23 @@ describe("Mocked Groq AI Services", () => {
                     ],
                 });
 
-                await feedbackServices.generateFeedbackWithGroq(
-                    [
+                await feedbackServices.generateFeedbackWithGroq({
+                    interviewFormat: "1-on-1",
+                    transcripts: [
                         {
                             questionId: "question-1",
                             transcript:
                                 "Test transcript",
                         },
-                    ]
-                );
+                    ],
+                });
 
                 const call =
                     mockChatCreate.mock.calls[0][0];
 
                 expect(
                     call.messages[0].content
-                ).toBe(
+                ).toContain(
                     "TEST HIGHER VERSION PROMPT"
                 );
             } finally {
@@ -284,15 +287,16 @@ describe("Mocked Groq AI Services", () => {
                 ],
             });
 
-            await feedbackServices.generateFeedbackWithGroq(
-                [
+            await feedbackServices.generateFeedbackWithGroq({
+                interviewFormat: "1-on-1",
+                transcripts: [
                     {
                         questionId: "question-1",
                         transcript:
                             "I selected this course because it matches my career goals.",
                     },
-                ]
-            );
+                ],
+            });
 
             const call =
                 mockChatCreate.mock.calls[0][0];
@@ -322,15 +326,16 @@ describe("Mocked Groq AI Services", () => {
                 );
 
             await expect(
-                feedbackServices.generateFeedbackWithGroq(
-                    [
+                feedbackServices.generateFeedbackWithGroq({
+                    interviewFormat: "1-on-1",
+                    transcripts: [
                         {
                             questionId: "question-1",
                             transcript:
                                 "Test transcript",
                         },
-                    ]
-                )
+                    ],
+                })
             ).rejects.toThrow(
                 "No active prompt found for module: interview_feedback"
             );
@@ -346,18 +351,20 @@ describe("Mocked Groq AI Services", () => {
             );
 
             await expect(
-                feedbackServices.generateFeedbackWithGroq(
-                    [
+                feedbackServices.generateFeedbackWithGroq({
+                    interviewFormat: "1-on-1",
+                    transcripts: [
                         {
                             questionId: "question-1",
                             transcript:
                                 "Test transcript",
                         },
-                    ]
-                )
+                    ],
+                })
             ).rejects.toThrow(
                 "Groq feedback failed"
             );
         });
     });
 });
+

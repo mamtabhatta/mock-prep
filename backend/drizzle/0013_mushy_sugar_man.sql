@@ -1,0 +1,2 @@
+DROP INDEX IF EXISTS "session_questions_session_order_idx";--> statement-breakpoint
+CREATE UNIQUE INDEX IF NOT EXISTS "session_questions_session_order_unique" ON "session_questions" ("session_id","order_index");

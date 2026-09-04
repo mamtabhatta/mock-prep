@@ -18,7 +18,11 @@ export const users = pgTable("users", {
 
     email: varchar("email", { length: 255 }).notNull().unique(),
 
-    passwordHash: varchar("password_hash", { length: 255 }).notNull(),
+    // Nullable because Google accounts may not have a password
+    passwordHash: varchar("password_hash", { length: 255 }),
+
+    // Google's unique user ID
+    googleId: varchar("google_id", { length: 255 }).unique(),
 
     fullName: varchar("full_name", { length: 255 }).notNull(),
 

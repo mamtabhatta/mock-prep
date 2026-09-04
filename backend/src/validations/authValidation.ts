@@ -9,6 +9,7 @@ export const registerSchema = z.object({
 export const loginSchema = z.object({
     email: z.string().email(),
     password: z.string().min(8),
+    rememberMe: z.boolean().optional().default(false),
 });
 
 export const refreshTokenSchema = z.object({
@@ -57,6 +58,4 @@ export type ResetPasswordInput = z.infer<typeof resetPasswordSchema>;
 export type VerifyEmailInput = z.infer<typeof verifyEmailSchema>;
 export type UpdateProfileInput = z.infer<typeof updateProfileSchema>;
 export type UpdateUserRoleInput = z.infer<typeof updateUserRoleSchema>;
-export type UpdateUserSuspensionInput = z.infer<
-    typeof updateUserSuspensionSchema
->;
+export type UpdateUserSuspensionInput = z.infer<typeof updateUserSuspensionSchema>;

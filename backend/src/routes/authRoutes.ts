@@ -7,6 +7,8 @@ import {
     forgotPassword,
     resetPassword,
     verifyEmail,
+    googleLogin,
+    googleCallback,
 } from "../controllers/authControllers";
 
 import { authenticate } from "../middlewares/authMiddleware";
@@ -173,6 +175,42 @@ router.post(
     "/forgot-password",
     validate({ body: forgotPasswordSchema }),
     forgotPassword
+);
+
+/**
+ * @openapi
+ * /auth/google:
+ *   get:
+ *     tags:
+ *       - Authentication
+ *     summary: Start Google OAuth login
+ *     description: Redirects the user to Google for authentication.
+ *     responses:
+ *       302:
+ *         description: Redirect to Google OAuth authorization page
+ */
+router.get(
+    "/google",
+    googleLogin
+);
+
+/**
+ * @openapi
+ * /auth/google/callback:
+ *   get:
+ *     tags:
+ *       - Authentication
+ *     summary: Google OAuth callback
+ *     description: Handles the callback from Google after successful authentication.
+ *     responses:
+ *       302:
+ *         description: Authentication completed and user redirected
+ *       400:
+ *         description: Google authentication failed
+ */
+router.get(
+    "/google/callback",
+    googleCallback
 );
 
 /**

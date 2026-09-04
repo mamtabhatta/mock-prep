@@ -48,7 +48,6 @@ export const createSession = async (
                 "Session created successfully",
             data: session,
         });
-
     } catch (error) {
         next(error);
     }
@@ -83,7 +82,6 @@ export const getUserSessions = async (
                 "Sessions retrieved successfully",
             data: sessions,
         });
-
     } catch (error) {
         next(error);
     }
@@ -122,7 +120,6 @@ export const getSessionById = async (
                 "Session retrieved successfully",
             data: session,
         });
-
     } catch (error) {
         next(error);
     }
@@ -178,7 +175,6 @@ export const createSessionAnswer = async (
                 "Answer uploaded successfully",
             data: answer,
         });
-
     } catch (error) {
         next(error);
     }
@@ -217,7 +213,6 @@ export const submitSession = async (
                 "Session submitted successfully",
             data: session,
         });
-
     } catch (error) {
         next(error);
     }
@@ -256,11 +251,12 @@ export const deleteSession = async (
                 "Session deleted successfully",
             data: result,
         });
-
     } catch (error) {
         next(error);
     }
 };
+
+
 // ============================================
 // GET ANSWER PLAYBACK URL
 // ============================================

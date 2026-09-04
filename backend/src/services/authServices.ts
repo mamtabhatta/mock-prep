@@ -61,7 +61,9 @@ export const register = async (data: RegisterInput) => {
     await db.insert(refreshTokens).values({
         userId: user.id,
         token: refreshToken,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        expiresAt: new Date(
+            Date.now() + 7 * 24 * 60 * 60 * 1000
+        ),
     });
 
     return {
@@ -77,14 +79,20 @@ export const register = async (data: RegisterInput) => {
 };
 
 export const login = async (data: LoginInput) => {
-    const { email, password } = data;
+    const { email, password, rememberMe } = data;
+
+    const normalizedEmail = email.toLowerCase().trim();
 
     const user = await db.query.users.findFirst({
-        where: eq(users.email, email),
+        where: eq(users.email, normalizedEmail),
     });
 
-    if (!user) {
+    if (!user || !user.passwordHash) {
         throw new Error("Invalid email or password");
+    }
+
+    if (user.isSuspended) {
+        throw new Error("Your account has been suspended");
     }
 
     const isPasswordValid = await bcrypt.compare(
@@ -96,13 +104,26 @@ export const login = async (data: LoginInput) => {
         throw new Error("Invalid email or password");
     }
 
-    const accessToken = generateAccessToken(user.id, user.role);
-    const refreshToken = generateRefreshToken(user.id);
+    const accessToken = generateAccessToken(
+        user.id,
+        user.role
+    );
+
+    const refreshToken = generateRefreshToken(
+        user.id,
+        rememberMe
+    );
+
+    const refreshTokenExpiry = rememberMe
+        ? 30 * 24 * 60 * 60 * 1000
+        : 7 * 24 * 60 * 60 * 1000;
 
     await db.insert(refreshTokens).values({
         userId: user.id,
         token: refreshToken,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        expiresAt: new Date(
+            Date.now() + refreshTokenExpiry
+        ),
     });
 
     return {
@@ -130,6 +151,10 @@ export const refresh = async (token: string) => {
         throw new Error("Invalid refresh token");
     }
 
+    if (new Date() > storedToken.expiresAt) {
+        throw new Error("Refresh token has expired");
+    }
+
     const payload = jwt.verify(
         token,
         process.env.JWT_REFRESH_SECRET!
@@ -150,13 +175,28 @@ export const refresh = async (token: string) => {
         .set({ isRevoked: true })
         .where(eq(refreshTokens.id, storedToken.id));
 
-    const newAccessToken = generateAccessToken(user.id, user.role);
-    const newRefreshToken = generateRefreshToken(user.id);
+    const newAccessToken = generateAccessToken(
+        user.id,
+        user.role
+    );
+
+    const remainingTime =
+        storedToken.expiresAt.getTime() - Date.now();
+
+    const rememberMe =
+        remainingTime > 7 * 24 * 60 * 60 * 1000;
+
+    const newRefreshToken = generateRefreshToken(
+        user.id,
+        rememberMe
+    );
 
     await db.insert(refreshTokens).values({
         userId: user.id,
         token: newRefreshToken,
-        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        expiresAt: new Date(
+            Date.now() + remainingTime
+        ),
     });
 
     return {
@@ -185,10 +225,14 @@ export const forgotPassword = async (data: ForgotPasswordInput) => {
         expiresAt: new Date(Date.now() + 15 * 60 * 1000),
     });
 
-    console.log(`Reset Link: http://localhost:5000/api/v1/auth/reset-password?token=${token}`);
+    const resetUrl =
+        `http://localhost:5173/reset-password?token=${token}`;
+
+    console.log(`Reset Link: ${resetUrl}`);
 
     return {
-        message: "Password reset link generated successfully",
+        message: "Reset Link generated successfully",
+        resetUrl,
     };
 };
 
@@ -244,11 +288,15 @@ export const sendVerificationEmail = async (userId: string) => {
 
     console.log(`Verification Link: http://localhost:5000/api/v1/auth/verify-email?token=${token}`);
 
-    return { message: "Verification email sent successfully" };
+    return {
+        message: "Verification email sent successfully",
+    };
 };
 
 export const verifyEmail = async (token: string) => {
-    if (!token) throw new Error("Token is required");
+    if (!token) {
+        throw new Error("Token is required");
+    }
 
     const cleanToken = token.trim();
 
@@ -256,7 +304,11 @@ export const verifyEmail = async (token: string) => {
         where: eq(emailTokens.token, cleanToken),
     });
 
-    if (!storedToken || storedToken.type !== "email_verification" || storedToken.isUsed) {
+    if (
+        !storedToken ||
+        storedToken.type !== "email_verification" ||
+        storedToken.isUsed
+    ) {
         throw new Error("Invalid or already used token");
     }
 
@@ -276,5 +328,7 @@ export const verifyEmail = async (token: string) => {
             .where(eq(emailTokens.id, storedToken.id));
     });
 
-    return { message: "Email verified successfully" };
+    return {
+        message: "Email verified successfully",
+    };
 };

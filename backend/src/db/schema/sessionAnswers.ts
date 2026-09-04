@@ -7,8 +7,8 @@ import {
     uuid,
 } from "drizzle-orm/pg-core";
 
-import { questions } from "./questions";
 import { sessions } from "./sessions";
+import { sessionQuestions } from "./sessionQuestions";
 
 export const sessionAnswers = pgTable(
     "session_answers",
@@ -25,7 +25,9 @@ export const sessionAnswers = pgTable(
 
         questionId: uuid("question_id")
             .notNull()
-            .references(() => questions.id),
+            .references(() => sessionQuestions.id, {
+                onDelete: "cascade",
+            }),
 
         recordingUrl: text("recording_url"),
 

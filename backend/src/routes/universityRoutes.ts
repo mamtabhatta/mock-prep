@@ -6,7 +6,7 @@ import {
     updateUniversity,
     deactivateUniversity,
     deleteUniversity,
-     getUniversities,
+    getUniversities,
 } from "../controllers/universityControllers";
 
 import { authenticate } from "../middlewares/authMiddleware";
@@ -28,9 +28,17 @@ const router = Router();
  *     summary: Create a university
  *     security:
  *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
  *     responses:
  *       201:
  *         description: University created successfully
+ *       400:
+ *         description: Invalid request
  *       401:
  *         description: Unauthorized
  */
@@ -40,6 +48,22 @@ router.post(
     authorize("super_admin"),
     createUniversity
 );
+
+/**
+ * @openapi
+ * /universities:
+ *   get:
+ *     tags:
+ *       - Universities
+ *     summary: Get all universities
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Universities retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ */
 router.get(
     "/universities",
     authenticate,
@@ -64,19 +88,13 @@ router.get(
  *     responses:
  *       200:
  *         description: University retrieved successfully
+ *       400:
+ *         description: Invalid university ID
  *       401:
  *         description: Unauthorized
  *       404:
  *         description: University not found
  */
-router.get(
-    "/universities/:universityId",
-    authenticate,
-    validate({
-        params: universityIdParamSchema,
-    }),
-    getUniversity
-);
 router.get(
     "/universities/:universityId",
     authenticate,
@@ -101,9 +119,17 @@ router.get(
  *         required: true
  *         schema:
  *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
  *     responses:
  *       200:
  *         description: University updated successfully
+ *       400:
+ *         description: Invalid request
  *       401:
  *         description: Unauthorized
  *       404:
@@ -137,6 +163,8 @@ router.patch(
  *     responses:
  *       200:
  *         description: University deactivated successfully
+ *       400:
+ *         description: Invalid university ID
  *       401:
  *         description: Unauthorized
  *       404:
@@ -170,6 +198,8 @@ router.patch(
  *     responses:
  *       200:
  *         description: University deleted successfully
+ *       400:
+ *         description: Invalid university ID
  *       401:
  *         description: Unauthorized
  *       404:

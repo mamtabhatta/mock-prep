@@ -4,58 +4,19 @@ import { AppError } from "../utils/AppError.js";
 import { logger } from "../utils/logger.js";
 
 export const errorHandler = (
-  err: unknown,
-  req: Request,
-  res: Response,
-  next: NextFunction
+    err: any,
+    req: Request,
+    res: Response,
+    next: NextFunction
 ) => {
-  logger.error(
-    {
-      requestId: req.id,
-      method: req.method,
-      url: req.originalUrl,
-      err,
-    },
-    "Request failed"
-  );
+    console.error("🔥 ACTUAL ERROR:", err);
+    console.error("🔥 ERROR MESSAGE:", err?.message);
+    console.error("🔥 ERROR STACK:", err?.stack);
 
-  // Zod validation errors
-  if (err instanceof ZodError) {
-    return res.status(400).json({
-      error: {
-        code: "VALIDATION_ERROR",
-        message: "Invalid request data",
-      },
+    return res.status(err.statusCode || 500).json({
+        success: false,
+        message: err.message || "Internal server error",
     });
-  }
-
-  // Application errors
-  if (err instanceof AppError) {
-    return res.status(err.statusCode).json({
-      error: {
-        code: err.code,
-        message: err.message,
-      },
-    });
-  }
-
-  // PostgreSQL / Drizzle errors
-  if (isDatabaseError(err)) {
-    return res.status(400).json({
-      error: {
-        code: getDatabaseErrorCode(err),
-        message: getDatabaseErrorMessage(err),
-      },
-    });
-  }
-
-  // Unknown errors
-  return res.status(500).json({
-    error: {
-      code: "INTERNAL_SERVER_ERROR",
-      message: "Internal server error",
-    },
-  });
 };
 
 const isDatabaseError = (

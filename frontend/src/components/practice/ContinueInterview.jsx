@@ -1,38 +1,164 @@
+import {
+    ArrowRight,
+    Loader2,
+} from "lucide-react";
 
-import { ArrowRight, Loader2 } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { useState } from "react";
+import {
+    useNavigate,
+} from "react-router-dom";
+
+import {
+    useState,
+} from "react";
+
 import api from "../../api/api";
 
-function ContinueButton({
+function ContinueInterview({
     universityId,
     courseId,
     questionSetId,
+    format,
+    file,
 }) {
     const navigate = useNavigate();
 
-    const [loading, setLoading] = useState(false);
+    const [loading, setLoading] =
+        useState(false);
 
     const handleContinue = async () => {
+        if (!universityId) {
+            alert("Please select a university.");
+            return;
+        }
+
+        if (!courseId) {
+            alert("Please select a course.");
+            return;
+        }
+
+        if (!questionSetId) {
+            alert("Please select a question set.");
+            return;
+        }
+
+        if (!format) {
+            alert("Please select an interview format.");
+            return;
+        }
+
         try {
             setLoading(true);
 
-            const response = await api.post("/sessions", {
-                module: "interview",
-                universityId,
-                courseId,
-                questionSetId,
-            });
+            // ============================================
+            // CREATE SESSION
+            // ============================================
 
-            const sessionId = response.data.data.id;
+            const response = await api.post(
+                "/sessions",
+                {
+                    module: "interview",
+                    universityId,
+                    courseId,
+                    questionSetId,
+                    interviewFormat: format,
+                }
+            );
 
-            navigate(`/dashboard/interview/${sessionId}`);
+            const sessionId =
+                response.data?.data?.id;
+
+            if (!sessionId) {
+                throw new Error(
+                    "Session ID was not returned by the server."
+                );
+            }
+
+            console.log(
+                "Session created:",
+                sessionId
+            );
+
+            console.log(
+                "Interview format:",
+                format
+            );
+
+            // ============================================
+            // UPLOAD CV
+            // ============================================
+
+            if (file) {
+                console.log("Uploading CV...");
+
+                const formData =
+                    new FormData();
+
+                formData.append(
+                    "file",
+                    file
+                );
+
+                formData.append(
+                    "documentType",
+                    "cv"
+                );
+
+                const uploadResponse =
+                    await api.post(
+                        `/sessions/${sessionId}/documents`,
+                        formData
+                    );
+
+                console.log(
+                    "CV upload response:",
+                    uploadResponse.data
+                );
+            }
+
+            // ============================================
+            // SAVE FORMAT FOR UI
+            // ============================================
+
+            sessionStorage.setItem(
+                `interviewFormat_${sessionId}`,
+                format
+            );
+
+            // ============================================
+            // NAVIGATE TO INTERVIEW
+            // ============================================
+
+            navigate(
+                `/dashboard/interview/${sessionId}`
+            );
 
         } catch (error) {
             console.error(
-                "Failed to create session:",
+                "Failed to start interview:",
                 error
             );
+
+            console.log(
+                "STATUS:",
+                error.response?.status
+            );
+
+            console.log(
+                "DATA:",
+                error.response?.data
+            );
+
+            console.log(
+                "HEADERS:",
+                error.response?.headers
+            );
+
+            alert(
+                error.response?.data?.message ||
+                error.message ||
+                "Failed to start the interview."
+            );
+
         } finally {
             setLoading(false);
         }
@@ -42,7 +168,13 @@ function ContinueButton({
         <button
             type="button"
             onClick={handleContinue}
-            disabled={loading}
+            disabled={
+                loading ||
+                !universityId ||
+                !courseId ||
+                !questionSetId ||
+                !format
+            }
             className="
                 flex
                 w-full
@@ -68,6 +200,7 @@ function ContinueButton({
                 focus:ring-2
                 focus:ring-blue-500
                 focus:ring-offset-2
+                dark:focus:ring-offset-slate-900
             "
         >
             {loading ? (
@@ -77,7 +210,7 @@ function ContinueButton({
                         className="animate-spin"
                     />
 
-                    Creating Interview...
+                    Starting Interview...
                 </>
             ) : (
                 <>
@@ -93,5 +226,4 @@ function ContinueButton({
     );
 }
 
-export default ContinueButton;
-
+export default ContinueInterview;

@@ -1,8 +1,6 @@
-
 import Bar from "./Bar";
 
 export default function TrendChart({ sessions = [] }) {
-
     const getScore = (session) => {
         const feedbackReport =
             session?.feedbackReport || {};
@@ -14,12 +12,21 @@ export default function TrendChart({ sessions = [] }) {
             feedbackReport?.quickSnapshotJson || {};
 
         const rawScore =
-            scores.overall_score ??
-            scores.overallScore ??
-            quickSnapshot.overall_score ??
-            quickSnapshot.overallScore ??
-            feedbackReport.overall_score ??
-            null;
+            session?.module === "speaking"
+                ? (
+                    scores.overallBand ??
+                    scores.overall_band ??
+                    quickSnapshot.overallBand ??
+                    quickSnapshot.overall_band ??
+                    null
+                )
+                : (
+                    scores.overallScore ??
+                    scores.overall_score ??
+                    quickSnapshot.overallScore ??
+                    quickSnapshot.overall_score ??
+                    null
+                );
 
         if (
             rawScore === null ||
@@ -28,31 +35,31 @@ export default function TrendChart({ sessions = [] }) {
             return null;
         }
 
-        const numericScore = Number(rawScore);
+        const numericScore =
+            Number(rawScore);
 
         if (isNaN(numericScore)) {
             return null;
         }
 
-        // Convert /100 to /10
-        return numericScore > 10
+        return session?.module === "interview" &&
+            numericScore > 10
             ? numericScore / 10
             : numericScore;
     };
 
-  
-
-    const recentSessions =
-        sessions.slice(-5);
-
-
     const scoredSessions =
-        recentSessions.map((session) => ({
-            ...session,
-            score: getScore(session),
-        }));
-
-
+        sessions
+            .filter(
+                (session) =>
+                    session?.feedbackReport &&
+                    getScore(session) !== null
+            )
+            .slice(-5)
+            .map((session) => ({
+                ...session,
+                score: getScore(session),
+            }));
 
     const validScores =
         scoredSessions
@@ -61,8 +68,6 @@ export default function TrendChart({ sessions = [] }) {
                 (score) =>
                     typeof score === "number"
             );
-
-  
 
     let trend = 0;
 
@@ -74,15 +79,12 @@ export default function TrendChart({ sessions = [] }) {
             validScores[0];
     }
 
-
     const trendText =
         trend > 0
             ? `+${trend.toFixed(1)}`
             : trend < 0
                 ? trend.toFixed(1)
                 : "0.0";
-
-  
 
     return (
         <div
@@ -105,9 +107,6 @@ export default function TrendChart({ sessions = [] }) {
                 hover:shadow-md
             "
         >
-
-          
-
             <div
                 className="
                     flex
@@ -116,9 +115,7 @@ export default function TrendChart({ sessions = [] }) {
                     mb-5
                 "
             >
-
                 <div>
-
                     <h2
                         className="
                             text-base
@@ -141,11 +138,10 @@ export default function TrendChart({ sessions = [] }) {
                         "
                     >
                         Last {Math.min(
-                            sessions.length,
+                            scoredSessions.length,
                             5
                         )} sessions
                     </p>
-
                 </div>
 
                 <span
@@ -164,14 +160,9 @@ export default function TrendChart({ sessions = [] }) {
                 >
                     {trendText}
                 </span>
-
             </div>
 
-            {/* ================================= */}
-            {/* NO SESSIONS */}
-            {/* ================================= */}
-
-            {sessions.length === 0 && (
+            {scoredSessions.length === 0 && (
                 <div
                     className="
                         h-40
@@ -184,15 +175,11 @@ export default function TrendChart({ sessions = [] }) {
                         dark:text-gray-500
                     "
                 >
-                    No sessions yet.
+                    No completed sessions yet.
                 </div>
             )}
 
-            {/* ================================= */}
-            {/* SESSIONS */}
-            {/* ================================= */}
-
-            {sessions.length > 0 && (
+            {scoredSessions.length > 0 && (
                 <div
                     className="
                         flex
@@ -206,17 +193,12 @@ export default function TrendChart({ sessions = [] }) {
                         pb-2
                     "
                 >
-
                     {scoredSessions.map(
                         (session, index) => (
                             <Bar
                                 key={session.id}
                                 score={session.score}
-                                label={`S${
-                                    sessions.indexOf(
-                                        session
-                                    ) + 1
-                                }`}
+                                label={`S${index + 1}`}
                                 active={
                                     index ===
                                     scoredSessions.length - 1
@@ -224,11 +206,8 @@ export default function TrendChart({ sessions = [] }) {
                             />
                         )
                     )}
-
                 </div>
             )}
-
         </div>
     );
 }
-

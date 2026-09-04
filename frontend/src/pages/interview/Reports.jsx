@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 
 import api from "../../api/api";
@@ -6,26 +5,17 @@ import api from "../../api/api";
 import ReportCard from "../../components/Reports/ReportCard";
 
 export default function Reports() {
-
     const [sessions, setSessions] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState("");
 
-    // ============================================
-    // FETCH REPORTS
-    // ============================================
-
     useEffect(() => {
-
         const fetchReports = async () => {
-
             try {
-
                 setLoading(true);
                 setError("");
 
-                const response =
-                    await api.get("/sessions");
+                const response = await api.get("/sessions");
 
                 console.log(
                     "Reports sessions:",
@@ -35,9 +25,7 @@ export default function Reports() {
                 setSessions(
                     response.data?.data || []
                 );
-
             } catch (err) {
-
                 console.error(
                     "Failed to fetch reports:",
                     err
@@ -47,24 +35,15 @@ export default function Reports() {
                     err.response?.data?.message ||
                     "Failed to load reports."
                 );
-
             } finally {
-
                 setLoading(false);
-
             }
         };
 
         fetchReports();
-
     }, []);
 
-    // ============================================
-    // GET SCORE
-    // ============================================
-
     const getScore = (session) => {
-
         const feedbackReport =
             session?.feedbackReport || {};
 
@@ -77,8 +56,10 @@ export default function Reports() {
         const rawScore =
             scores.overall_score ??
             scores.overallScore ??
+            scores.overallBand ??
             quickSnapshot.overall_score ??
             quickSnapshot.overallScore ??
+            quickSnapshot.overallBand ??
             feedbackReport.overall_score ??
             null;
 
@@ -89,14 +70,12 @@ export default function Reports() {
             return "--";
         }
 
-        const numericScore =
-            Number(rawScore);
+        const numericScore = Number(rawScore);
 
         if (isNaN(numericScore)) {
             return "--";
         }
 
-        // Backend may return 72 or 7.2
         const normalizedScore =
             numericScore > 10
                 ? numericScore / 10
@@ -105,14 +84,8 @@ export default function Reports() {
         return normalizedScore.toFixed(1);
     };
 
-    // ============================================
-    // SCORE COLOR
-    // ============================================
-
     const getScoreColor = (score) => {
-
-        const numericScore =
-            Number(score);
+        const numericScore = Number(score);
 
         if (isNaN(numericScore)) {
             return "blue";
@@ -129,44 +102,33 @@ export default function Reports() {
         return "orange";
     };
 
-    // ============================================
-    // FORMAT RELATIVE DATE
-    // ============================================
-
     const formatRelativeDate = (date) => {
-
         if (!date) {
             return "";
         }
 
-        const targetDate =
-            new Date(date);
+        const targetDate = new Date(date);
+        const now = new Date();
 
-        const now =
-            new Date();
+        const startOfToday = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate()
+        );
 
-        const startOfToday =
-            new Date(
-                now.getFullYear(),
-                now.getMonth(),
-                now.getDate()
-            );
+        const startOfTarget = new Date(
+            targetDate.getFullYear(),
+            targetDate.getMonth(),
+            targetDate.getDate()
+        );
 
-        const startOfTarget =
-            new Date(
-                targetDate.getFullYear(),
-                targetDate.getMonth(),
-                targetDate.getDate()
-            );
-
-        const difference =
-            Math.floor(
-                (
-                    startOfToday -
-                    startOfTarget
-                ) /
-                (1000 * 60 * 60 * 24)
-            );
+        const difference = Math.floor(
+            (
+                startOfToday -
+                startOfTarget
+            ) /
+            (1000 * 60 * 60 * 24)
+        );
 
         const time =
             targetDate.toLocaleTimeString(
@@ -203,12 +165,7 @@ export default function Reports() {
         );
     };
 
-    // ============================================
-    // FORMAT MODULE
-    // ============================================
-
     const formatModule = (module) => {
-
         if (!module) {
             return "University Interview";
         }
@@ -225,17 +182,11 @@ export default function Reports() {
         return formatted;
     };
 
-    // ============================================
-    // GET REPORT TITLE
-    // ============================================
-
     const getTitle = (session) => {
-
-        if (session.module === "ielts") {
-            return "IELTS Speaking";
-        }
-
-        if (session.module === "speaking") {
+        if (
+            session.module === "ielts" ||
+            session.module === "speaking"
+        ) {
             return "IELTS Speaking";
         }
 
@@ -258,12 +209,7 @@ export default function Reports() {
         );
     };
 
-    // ============================================
-    // GET UNIVERSITY
-    // ============================================
-
     const getUniversity = (session) => {
-
         return (
             session?.university?.name ||
             session?.universityName ||
@@ -271,12 +217,7 @@ export default function Reports() {
         );
     };
 
-    // ============================================
-    // GET COURSE
-    // ============================================
-
     const getCourse = (session) => {
-
         return (
             session?.course?.name ||
             session?.courseName ||
@@ -284,18 +225,31 @@ export default function Reports() {
         );
     };
 
-    // ============================================
-    // PREPARE REPORT DATA
-    // ============================================
+    const reports = sessions
+        .filter((session) => {
+            const isInterviewOrSpeaking =
+                session.module === "interview" ||
+                session.module === "university_interview" ||
+                session.module === "ielts" ||
+                session.module === "speaking";
 
-    const reports =
-        sessions.map((session) => {
+            const isSubmitted =
+                session.status === "submitted" ||
+                session.status === "completed" ||
+                session.status === "ai_reviewed";
 
-            const score =
-                getScore(session);
+            return (
+                isInterviewOrSpeaking &&
+                isSubmitted
+            );
+        })
+        .map((session) => {
+            const score = getScore(session);
 
             return {
                 id: session.id,
+
+                module: session.module,
 
                 score,
 
@@ -314,17 +268,13 @@ export default function Reports() {
                 date:
                     formatRelativeDate(
                         session.submittedAt ||
+                        session.completedAt ||
                         session.startedAt
                     ),
             };
         });
 
-    // ============================================
-    // LOADING
-    // ============================================
-
     if (loading) {
-
         return (
             <div
                 className="
@@ -333,7 +283,6 @@ export default function Reports() {
                     dark:bg-gray-950
                 "
             >
-
                 <div
                     className="
                         max-w-4xl
@@ -342,7 +291,6 @@ export default function Reports() {
                         py-10
                     "
                 >
-
                     <h1
                         className="
                             text-3xl
@@ -364,19 +312,12 @@ export default function Reports() {
                     >
                         Loading your reports...
                     </p>
-
                 </div>
-
             </div>
         );
     }
 
-    // ============================================
-    // ERROR
-    // ============================================
-
     if (error) {
-
         return (
             <div
                 className="
@@ -385,7 +326,6 @@ export default function Reports() {
                     dark:bg-gray-950
                 "
             >
-
                 <div
                     className="
                         max-w-4xl
@@ -394,7 +334,6 @@ export default function Reports() {
                         py-10
                     "
                 >
-
                     <h1
                         className="
                             text-3xl
@@ -424,16 +363,10 @@ export default function Reports() {
                     >
                         {error}
                     </div>
-
                 </div>
-
             </div>
         );
     }
-
-    // ============================================
-    // PAGE
-    // ============================================
 
     return (
         <div
@@ -444,7 +377,6 @@ export default function Reports() {
                 transition-colors
             "
         >
-
             <div
                 className="
                     max-w-4xl
@@ -453,11 +385,6 @@ export default function Reports() {
                     py-10
                 "
             >
-
-                {/* ================================= */}
-                {/* HEADING */}
-                {/* ================================= */}
-
                 <h1
                     className="
                         text-3xl
@@ -477,13 +404,9 @@ export default function Reports() {
                         dark:text-gray-400
                     "
                 >
-                    Every session with its score
-                    and full feedback.
+                    Every submitted session with its
+                    score and full feedback.
                 </p>
-
-                {/* ================================= */}
-                {/* EMPTY */}
-                {/* ================================= */}
 
                 {reports.length === 0 && (
                     <div
@@ -499,7 +422,6 @@ export default function Reports() {
                             text-center
                         "
                     >
-
                         <h2
                             className="
                                 text-lg
@@ -520,17 +442,12 @@ export default function Reports() {
                             "
                         >
                             Complete a mock
-                            interview session
-                            to see your report
-                            here.
+                            interview or speaking
+                            session to see your
+                            report here.
                         </p>
-
                     </div>
                 )}
-
-                {/* ================================= */}
-                {/* REPORTS */}
-                {/* ================================= */}
 
                 {reports.length > 0 && (
                     <div
@@ -539,7 +456,6 @@ export default function Reports() {
                             space-y-4
                         "
                     >
-
                         {reports.map(
                             (report) => (
                                 <ReportCard
@@ -548,13 +464,9 @@ export default function Reports() {
                                 />
                             )
                         )}
-
                     </div>
                 )}
-
             </div>
-
         </div>
     );
 }
-

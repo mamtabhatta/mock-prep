@@ -1,159 +1,198 @@
-import { Worker } from "bullmq";
 
-import dotenv from "dotenv";
-
-import { eq } from "drizzle-orm";
-
+import crypto from "crypto";
+import { Worker, Job, Queue } from "bullmq";
+import IORedis from "ioredis";
 import { db } from "../db";
-
 import {
+    sessions,
     sessionAnswers,
     feedbackReports,
-    sessions,
 } from "../db/schema";
-
-import {
-    downloadObject,
-} from "../services/storageServices";
-
-import {
-    transcribeWithGroq,
-} from "../services/groqServices";
-
+import { eq } from "drizzle-orm";
+import { downloadObject } from "../services/storageServices";
+import { transcribeWithGroq } from "../services/groqServices";
 import {
     generateFeedbackWithGroq,
+    generateSpeakingFeedbackWithGroq,
 } from "../services/feedbackServices";
 
-import {
-    notifyJobFailure,
-} from "../services/notificationServices";
-
-import {
-    cleanupOldRecordings,
-} from "../services/recordingCleanupServices";
-
-import {
-    jobQueue,
-    setupScheduledJobs,
-} from "../queues/jobQueue";
-
-dotenv.config();
+const QUEUE_NAME = "mock-prep-jobs";
 
 const redisUrl =
     process.env.REDIS_URL ||
     "redis://localhost:6380";
 
-const redis =
-    new URL(redisUrl);
+const connection = new IORedis(redisUrl, {
+    maxRetriesPerRequest: null,
+});
 
-const redisConnection = {
-    host:
-        redis.hostname,
+const interviewFormats = [
+    "Panel",
+    "1-on-1",
+    "MMI",
+] as const;
 
-    port:
-        Number(
-            redis.port
-        ),
+type InterviewFormat =
+    (typeof interviewFormats)[number];
+
+const queueFeedbackIfReady = async (
+    sessionId: string
+) => {
+    const sessionResult = await db
+        .select({
+            id: sessions.id,
+            status: sessions.status,
+        })
+        .from(sessions)
+        .where(
+            eq(
+                sessions.id,
+                sessionId
+            )
+        )
+        .limit(1);
+
+    if (!sessionResult.length) {
+        return;
+    }
+
+    const session = sessionResult[0];
+
+    if (session.status !== "submitted") {
+        return;
+    }
+
+    const answers = await db
+        .select({
+            id: sessionAnswers.id,
+            transcriptionStatus:
+                sessionAnswers.transcriptionStatus,
+        })
+        .from(sessionAnswers)
+        .where(
+            eq(
+                sessionAnswers.sessionId,
+                sessionId
+            )
+        );
+
+    if (!answers.length) {
+        return;
+    }
+
+    const allCompleted = answers.every(
+        (answer) =>
+            answer.transcriptionStatus ===
+            "completed"
+    );
+
+    if (!allCompleted) {
+        return;
+    }
+
+    console.log(
+        `All ${answers.length} answer(s) are ready.`
+    );
+
+    const existingFeedback = await db
+        .select({
+            id: feedbackReports.id,
+        })
+        .from(feedbackReports)
+        .where(
+            eq(
+                feedbackReports.sessionId,
+                sessionId
+            )
+        )
+        .limit(1);
+
+    if (existingFeedback.length) {
+        console.log(
+            `Feedback already exists for session ${sessionId}`
+        );
+
+        return;
+    }
+
+    const feedbackQueue = new Queue(
+        QUEUE_NAME,
+        {
+            connection,
+        }
+    );
+
+    await feedbackQueue.add(
+        "generate-feedback",
+        {
+            sessionId,
+        },
+        {
+            attempts: 3,
+            backoff: {
+                type: "exponential",
+                delay: 2000,
+            },
+        }
+    );
+
+    await feedbackQueue.close();
+
+    console.log(
+        `Feedback job queued for session ${sessionId}`
+    );
 };
 
-const jobWorker =
-    new Worker(
-        "mock-prep-jobs",
+const worker = new Worker(
+    QUEUE_NAME,
+    async (job: Job) => {
+        console.log(
+            "================================="
+        );
 
-        async (job) => {
-            console.log(
-                "================================="
-            );
+        console.log(
+            `PROCESSING JOB: ${job.id}`
+        );
 
-            console.log(
-                "PROCESSING JOB:",
-                job.id
-            );
+        console.log(
+            `JOB NAME: ${job.name}`
+        );
 
-            console.log(
-                "JOB NAME:",
-                job.name
-            );
+        console.log(
+            "JOB DATA:",
+            job.data
+        );
 
-            console.log(
-                "JOB DATA:",
-                job.data
-            );
+        console.log(
+            "================================="
+        );
 
-            console.log(
-                "ATTEMPT:",
-                job.attemptsMade + 1,
-                "/",
-                job.opts.attempts ?? 1
-            );
+        if (
+            job.name ===
+            "transcribe-answer"
+        ) {
+            const sessionAnswerId =
+                job.data.sessionAnswerId ||
+                job.data.answerId;
 
-            console.log(
-                "================================="
-            );
+            const sessionId =
+                job.data.sessionId;
 
-            /*
-             * ========================================
-             * TRANSCRIBE ANSWER
-             * ========================================
-             */
+            const storageKey =
+                job.data.storageKey ||
+                job.data.recordingUrl;
 
             if (
-                job.name ===
-                "transcribe-answer"
+                !sessionAnswerId ||
+                !sessionId ||
+                !storageKey
             ) {
-                const {
-                    answerId,
-                    sessionId,
-                    recordingUrl,
-                } =
-                    job.data as {
-                        answerId: string;
-
-                        sessionId: string;
-
-                        recordingUrl: string;
-
-                        contentType: string;
-                    };
-
-                console.log(
-                    "ANSWER ID:",
-                    answerId
+                throw new Error(
+                    "Missing transcription job data"
                 );
+            }
 
-                console.log(
-                    "SESSION ID:",
-                    sessionId
-                );
-
-                console.log(
-                    "RECORDING URL:",
-                    recordingUrl
-                );
-
-                console.log(
-                    "RECORDING URL TYPE:",
-                    typeof recordingUrl
-                );
-
-                if (!answerId) {
-                    throw new Error(
-                        "Job is missing answerId"
-                    );
-                }
-
-                if (!sessionId) {
-                    throw new Error(
-                        "Job is missing sessionId"
-                    );
-                }
-
-                if (!recordingUrl) {
-                    throw new Error(
-                        "Job is missing recordingUrl"
-                    );
-                }
-
+            try {
                 await db
                     .update(
                         sessionAnswers
@@ -165,365 +204,264 @@ const jobWorker =
                     .where(
                         eq(
                             sessionAnswers.id,
-                            answerId
+                            sessionAnswerId
                         )
                     );
 
-                try {
-                    console.log(
-                        "Downloading audio from storage..."
+                const audioBuffer =
+                    await downloadObject(
+                        storageKey
                     );
 
-                    const audioBuffer =
-                        await downloadObject(
-                            recordingUrl
-                        );
-
-                    console.log(
-                        "Audio downloaded successfully."
+                const transcript =
+                    await transcribeWithGroq(
+                        audioBuffer,
+                        storageKey
                     );
 
-                    console.log(
-                        "Audio size:",
-                        audioBuffer.length,
-                        "bytes"
-                    );
-
-                    const filename =
-                        recordingUrl
-                            .split("/")
-                            .pop() ||
-                        `${answerId}.webm`;
-
-                    console.log(
-                        "Filename:",
-                        filename
-                    );
-
-                    console.log(
-                        "Sending audio to Groq..."
-                    );
-
-                    const transcript =
-                        await transcribeWithGroq(
-                            audioBuffer,
-                            filename
-                        );
-
-                    console.log(
-                        "Groq transcription successful."
-                    );
-
-                    console.log(
-                        "Transcript:",
-                        transcript
-                    );
-
-                    await db
-                        .update(
-                            sessionAnswers
-                        )
-                        .set({
-                            transcript,
-
-                            transcriptionStatus:
-                                "completed",
-                        })
-                        .where(
-                            eq(
-                                sessionAnswers.id,
-                                answerId
-                            )
-                        );
-
-                    console.log(
-                        "Database updated successfully."
-                    );
-
-                    const answers =
-                        await db
-                            .select({
-                                id:
-                                    sessionAnswers.id,
-
-                                transcriptionStatus:
-                                    sessionAnswers.transcriptionStatus,
-                            })
-                            .from(
-                                sessionAnswers
-                            )
-                            .where(
-                                eq(
-                                    sessionAnswers.sessionId,
-                                    sessionId
-                                )
-                            );
-
-                    console.log(
-                        "Total answers in session:",
-                        answers.length
-                    );
-
-                    const allCompleted =
-                        answers.length > 0 &&
-                        answers.every(
-                            (answer) =>
-                                answer.transcriptionStatus ===
-                                "completed"
-                        );
-
-                    console.log(
-                        "All answers completed:",
-                        allCompleted
-                    );
-
-                    if (
-                        allCompleted
-                    ) {
-                        console.log(
-                            "All transcripts completed."
-                        );
-
-                        console.log(
-                            "Queueing generate-feedback job..."
-                        );
-
-                        await jobQueue.add(
-                            "generate-feedback",
-
-                            {
-                                sessionId,
-                            },
-
-                            {
-                                jobId:
-                                    `generate-feedback-${sessionId}`,
-
-                                attempts: 3,
-
-                                backoff: {
-                                    type:
-                                        "exponential",
-
-                                    delay:
-                                        2000,
-                                },
-
-                                removeOnComplete:
-                                    true,
-
-                                removeOnFail:
-                                    false,
-                            }
-                        );
-
-                        console.log(
-                            "generate-feedback job queued."
-                        );
-                    }
-
-                    return {
-                        success: true,
-
-                        answerId,
-
-                        sessionId,
-
+                await db
+                    .update(
+                        sessionAnswers
+                    )
+                    .set({
                         transcript,
-
-                        allCompleted,
-                    };
-                } catch (
-                    error
-                ) {
-                    console.error(
-                        "Transcription processing error:",
-                        error
+                        transcriptionStatus:
+                            "completed",
+                    })
+                    .where(
+                        eq(
+                            sessionAnswers.id,
+                            sessionAnswerId
+                        )
                     );
 
-                    throw error;
-                }
-            }
-
-            /*
-             * ========================================
-             * GENERATE FEEDBACK
-             * ========================================
-             */
-
-            if (
-                job.name ===
-                "generate-feedback"
-            ) {
-                const {
-                    sessionId,
-                } =
-                    job.data as {
-                        sessionId: string;
-                    };
-
                 console.log(
-                    "================================="
+                    `Transcription completed for answer ${sessionAnswerId}`
                 );
 
-                console.log(
-                    "GENERATING AI FEEDBACK"
-                );
-
-                console.log(
-                    "SESSION ID:",
+                await queueFeedbackIfReady(
                     sessionId
                 );
 
-                console.log(
-                    "================================="
+                return {
+                    success: true,
+                    sessionAnswerId,
+                    sessionId,
+                };
+            } catch (error) {
+                console.error(
+                    `Transcription failed for answer ${sessionAnswerId}:`,
+                    error
                 );
 
-                if (!sessionId) {
-                    throw new Error(
-                        "generate-feedback job is missing sessionId"
-                    );
-                }
-
-                const answers =
-                    await db
-                        .select({
-                            questionId:
-                                sessionAnswers.questionId,
-
-                            transcript:
-                                sessionAnswers.transcript,
-
-                            transcriptionStatus:
-                                sessionAnswers.transcriptionStatus,
-                        })
-                        .from(
-                            sessionAnswers
+                await db
+                    .update(
+                        sessionAnswers
+                    )
+                    .set({
+                        transcriptionStatus:
+                            "failed",
+                    })
+                    .where(
+                        eq(
+                            sessionAnswers.id,
+                            sessionAnswerId
                         )
-                        .where(
-                            eq(
-                                sessionAnswers.sessionId,
-                                sessionId
-                            )
-                        );
+                    );
 
+                throw error;
+            }
+        }
+
+        if (
+            job.name ===
+            "generate-feedback"
+        ) {
+            const { sessionId } =
+                job.data as {
+                    sessionId: string;
+                };
+
+            if (!sessionId) {
+                throw new Error(
+                    "Missing sessionId for feedback job"
+                );
+            }
+
+            const sessionResult =
+                await db
+                    .select({
+                        id: sessions.id,
+                        status:
+                            sessions.status,
+                        module:
+                            sessions.module,
+                        interviewFormat:
+                            sessions.interviewFormat,
+                    })
+                    .from(sessions)
+                    .where(
+                        eq(
+                            sessions.id,
+                            sessionId
+                        )
+                    )
+                    .limit(1);
+
+            if (
+                !sessionResult.length
+            ) {
+                throw new Error(
+                    `Session not found: ${sessionId}`
+                );
+            }
+
+            const session =
+                sessionResult[0];
+
+            console.log(
+                "Session found:",
+                session
+            );
+
+            if (
+                session.status ===
+                "ai_reviewed"
+            ) {
                 console.log(
-                    "Answers found:",
-                    answers.length
+                    `Session ${sessionId} already has feedback`
                 );
 
-                const completedAnswers =
-                    answers.filter(
-                        (answer) =>
-                            answer.transcriptionStatus ===
-                                "completed" &&
-                            answer.transcript &&
-                            answer.transcript
-                                .trim()
-                                .length > 0
-                    );
+                return {
+                    success: true,
+                    skipped: true,
+                    reason:
+                        "already_reviewed",
+                };
+            }
 
+            if (
+                session.status !==
+                "submitted"
+            ) {
                 console.log(
-                    "Completed transcripts:",
-                    completedAnswers.length
+                    `Skipping feedback for session ${sessionId}. Status: ${session.status}`
                 );
 
-                if (
-                    completedAnswers.length ===
-                    0
-                ) {
-                    throw new Error(
-                        `No completed transcripts found for session ${sessionId}`
-                    );
-                }
+                return {
+                    success: true,
+                    skipped: true,
+                    reason:
+                        "invalid_status",
+                };
+            }
 
-                const allCompleted =
-                    answers.length > 0 &&
-                    answers.every(
-                        (answer) =>
-                            answer.transcriptionStatus ===
-                            "completed"
+            const answers =
+                await db
+                    .select({
+                        id:
+                            sessionAnswers.id,
+                        questionId:
+                            sessionAnswers.questionId,
+                        transcript:
+                            sessionAnswers.transcript,
+                        durationSeconds:
+                            sessionAnswers.durationSeconds,
+                        transcriptionStatus:
+                            sessionAnswers.transcriptionStatus,
+                    })
+                    .from(
+                        sessionAnswers
+                    )
+                    .where(
+                        eq(
+                            sessionAnswers.sessionId,
+                            sessionId
+                        )
                     );
 
-                if (
-                    !allCompleted
-                ) {
-                    throw new Error(
-                        `Not all answers are transcribed for session ${sessionId}`
-                    );
-                }
+            if (!answers.length) {
+                throw new Error(
+                    `No answers found for session ${sessionId}`
+                );
+            }
 
-                console.log(
-                    "Sending all transcripts to Groq LLM..."
+            console.log(
+                `Found ${answers.length} answer(s) for session ${sessionId}`
+            );
+
+            const incompleteAnswers =
+                answers.filter(
+                    (answer) =>
+                        answer.transcriptionStatus !==
+                            "completed" ||
+                        !answer.transcript
                 );
 
-                const feedback =
-                    await generateFeedbackWithGroq(
-                        completedAnswers.map(
+            if (
+                incompleteAnswers.length
+            ) {
+                throw new Error(
+                    `Not all answers have completed transcripts for session ${sessionId}`
+                );
+            }
+
+            if (
+                session.module ===
+                "speaking"
+            ) {
+                const speakingAnswers =
+                    answers
+                        .sort(
+                            (a, b) =>
+                                (
+                                    a.questionId ||
+                                    ""
+                                ).localeCompare(
+                                    b.questionId ||
+                                        ""
+                                )
+                        )
+                        .map(
                             (answer) => ({
                                 questionId:
                                     answer.questionId,
-
                                 transcript:
                                     answer.transcript!,
+                                durationSeconds:
+                                    answer.durationSeconds ??
+                                    0,
                             })
-                        )
+                        );
+
+                if (
+                    !speakingAnswers.length
+                ) {
+                    throw new Error(
+                        `No speaking answers found for session ${sessionId}`
                     );
+                }
 
                 console.log(
-                    "Groq feedback generated successfully."
+                    `Generating speaking feedback from ${speakingAnswers.length} answer(s)`
                 );
 
-                console.log(
-                    "Overall score:",
-                    feedback.overall_score
-                );
+                const feedback =
+                    await generateSpeakingFeedbackWithGroq(
+                        speakingAnswers
+                    );
 
                 await db
                     .insert(
                         feedbackReports
                     )
                     .values({
+                        id:
+                            crypto.randomUUID(),
                         sessionId,
-
                         aiFeedbackJson:
                             feedback,
-
-                        scoresJson: {
-                            overall_score:
-                                feedback.overall_score,
-
-                            answer_feedback:
-                                feedback.answer_feedback,
-                        },
-
-                        status:
-                            "ai_reviewed",
-                    })
-                    .onConflictDoUpdate({
-                        target:
-                            feedbackReports.sessionId,
-
-                        set: {
-                            aiFeedbackJson:
-                                feedback,
-
-                            scoresJson: {
-                                overall_score:
-                                    feedback.overall_score,
-
-                                answer_feedback:
-                                    feedback.answer_feedback,
-                            },
-
-                            status:
-                                "ai_reviewed",
-                        },
                     });
-
-                console.log(
-                    "Feedback report saved successfully."
-                );
 
                 await db
                     .update(
@@ -541,227 +479,188 @@ const jobWorker =
                     );
 
                 console.log(
-                    `Session ${sessionId} marked as ai_reviewed`
+                    `Speaking feedback generated successfully for session ${sessionId}`
                 );
 
                 return {
                     success: true,
-
                     sessionId,
-
-                    overallScore:
-                        feedback.overall_score,
+                    module:
+                        session.module,
+                    answerCount:
+                        speakingAnswers.length,
                 };
             }
 
-            /*
-             * ========================================
-             * CLEANUP OLD RECORDINGS
-             * ========================================
-             */
-
             if (
-                job.name ===
-                "cleanup-old-recordings"
+                session.module ===
+                "interview"
             ) {
-                console.log(
-                    "================================="
-                );
+                if (
+                    !session.interviewFormat ||
+                    !interviewFormats.includes(
+                        session.interviewFormat as InterviewFormat
+                    )
+                ) {
+                    throw new Error(
+                        `Invalid interview format: ${session.interviewFormat}`
+                    );
+                }
+
+                const interviewFormat =
+                    session.interviewFormat as InterviewFormat;
+
+                const feedback =
+                    await generateFeedbackWithGroq(
+                        {
+                            interviewFormat,
+                            transcripts:
+                                answers.map(
+                                    (
+                                        answer
+                                    ) => ({
+                                        questionId:
+                                            answer.questionId,
+                                        transcript:
+                                            answer.transcript!,
+                                    })
+                                ),
+                        }
+                    );
+
+                await db
+                    .insert(
+                        feedbackReports
+                    )
+                    .values({
+                        id:
+                            crypto.randomUUID(),
+                        sessionId,
+                        aiFeedbackJson:
+                            feedback,
+                    });
+
+                await db
+                    .update(
+                        sessions
+                    )
+                    .set({
+                        status:
+                            "ai_reviewed",
+                    })
+                    .where(
+                        eq(
+                            sessions.id,
+                            sessionId
+                        )
+                    );
 
                 console.log(
-                    "CLEANING UP OLD RECORDINGS"
+                    `Interview feedback generated for session ${sessionId} (${interviewFormat})`
                 );
 
-                console.log(
-                    "================================="
-                );
-
-                return await cleanupOldRecordings();
+                return {
+                    success: true,
+                    sessionId,
+                    module:
+                        session.module,
+                    interviewFormat,
+                };
             }
 
-            /*
-             * ========================================
-             * UNKNOWN JOB
-             * ========================================
-             */
-
-            console.log(
-                `Unknown job type: ${job.name}`
+            throw new Error(
+                `Unsupported session module: ${session.module}`
             );
-
-            return {
-                success: true,
-
-                processed: false,
-
-                jobId: job.id,
-            };
-        },
-
-        {
-            connection:
-                redisConnection,
-
-            concurrency: 1,
         }
-    );
 
-/*
- * ========================================
- * COMPLETED
- * ========================================
- */
-
-jobWorker.on(
-    "completed",
-    (job) => {
-        console.log(
-            `Job ${job.id} completed`
+        throw new Error(
+            `Unknown job type: ${job.name}`
         );
+    },
+    {
+        connection,
+        concurrency: 1,
     }
 );
 
-/*
- * ========================================
- * FAILED
- * ========================================
- */
-
-jobWorker.on(
+worker.on(
     "failed",
-
-    async (
-        job,
-        error
-    ) => {
+    async (job, error) => {
         console.error(
             `Job ${job?.id} failed:`,
-            error.message
+            error
         );
 
         if (!job) {
             return;
         }
 
-        const maxAttempts =
-            job.opts.attempts ??
-            1;
-
-        const attemptsMade =
-            job.attemptsMade;
-
-        console.log(
-            `Job ${job.id} attempt ${attemptsMade}/${maxAttempts}`
-        );
-
         if (
-            attemptsMade <
-            maxAttempts
+            job.attemptsMade >=
+            (job.opts.attempts || 1)
         ) {
-            console.log(
-                `Job ${job.id} will be retried.`
-            );
+            const sessionId =
+                job.data?.sessionId;
 
-            return;
-        }
+            if (!sessionId) {
+                return;
+            }
 
-        console.log(
-            `Job ${job.id} reached maximum attempts.`
-        );
+            try {
+                const sessionResult =
+                    await db
+                        .select({
+                            status:
+                                sessions.status,
+                            module:
+                                sessions.module,
+                        })
+                        .from(
+                            sessions
+                        )
+                        .where(
+                            eq(
+                                sessions.id,
+                                sessionId
+                            )
+                        )
+                        .limit(1);
 
-        const {
-            sessionId,
-            answerId,
-        } =
-            job.data as {
-                sessionId?: string;
-
-                answerId?: string;
-            };
-
-        /*
-         * Don't mark a session as failed
-         * because a cleanup job failed.
-         */
-        if (
-            sessionId &&
-            job.name !==
-                "cleanup-old-recordings"
-        ) {
-            await db
-                .update(
-                    sessions
-                )
-                .set({
-                    status:
-                        "failed",
-                })
-                .where(
-                    eq(
-                        sessions.id,
-                        sessionId
-                    )
+                if (
+                    sessionResult.length &&
+                    sessionResult[0].status ===
+                        "in_progress" &&
+                    sessionResult[0].module ===
+                        "interview"
+                ) {
+                    await db
+                        .update(
+                            sessions
+                        )
+                        .set({
+                            status:
+                                "failed",
+                        })
+                        .where(
+                            eq(
+                                sessions.id,
+                                sessionId
+                            )
+                        );
+                }
+            } catch (
+                updateError
+            ) {
+                console.error(
+                    "Failed to update session status:",
+                    updateError
                 );
-
-            console.log(
-                `Session ${sessionId} marked as failed`
-            );
+            }
         }
-
-        /*
-         * Don't mark an answer as
-         * transcription failed for
-         * cleanup jobs.
-         */
-        if (
-            job.name ===
-                "transcribe-answer" &&
-            answerId
-        ) {
-            await db
-                .update(
-                    sessionAnswers
-                )
-                .set({
-                    transcriptionStatus:
-                        "failed",
-                })
-                .where(
-                    eq(
-                        sessionAnswers.id,
-                        answerId
-                    )
-                );
-
-            console.log(
-                `Answer ${answerId} marked as failed`
-            );
-        }
-
-        await notifyJobFailure({
-            jobId:
-                job.id,
-
-            jobName:
-                job.name,
-
-            sessionId,
-
-            answerId,
-
-            error:
-                error.message,
-        });
     }
 );
 
-/*
- * ========================================
- * WORKER ERROR
- * ========================================
- */
-
-jobWorker.on(
+worker.on(
     "error",
     (error) => {
         console.error(
@@ -771,25 +670,16 @@ jobWorker.on(
     }
 );
 
-/*
- * ========================================
- * START WORKER + SCHEDULER
- * ========================================
- */
-
-setupScheduledJobs()
-    .then(() => {
+worker.on(
+    "completed",
+    (job) => {
         console.log(
-            "Job worker started"
+            `Job ${job.id} (${job.name}) completed`
         );
-    })
-    .catch(
-        (error) => {
-            console.error(
-                "Failed to configure scheduled jobs:",
-                error
-            );
+    }
+);
 
-            process.exit(1);
-        }
-    );
+console.log(
+    `Worker started for queue: ${QUEUE_NAME}`
+);
+

@@ -77,11 +77,8 @@ export default function Sidebar({
 
   return (
     <aside className="w-64 h-screen bg-white dark:bg-gray-900 border-r border-gray-200 dark:border-gray-700 flex flex-col justify-between px-5 py-6">
-
-      {/* Logo */}
       <div>
         <div className="flex items-center gap-3 mb-10">
-
           <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-bold">
             M
           </div>
@@ -89,12 +86,9 @@ export default function Sidebar({
           <h1 className="text-2xl font-bold text-gray-900 dark:text-white">
             MockPrep
           </h1>
-
         </div>
 
-        {/* Navigation */}
         <nav className="space-y-2">
-
           {menus.map((menu) => (
             <NavLink
               key={menu.name}
@@ -112,14 +106,10 @@ export default function Sidebar({
               {menu.name}
             </NavLink>
           ))}
-
         </nav>
       </div>
 
-      {/* Bottom */}
       <div>
-
-        {/* Dark Mode */}
         <button
           onClick={() => setDarkMode(!darkMode)}
           className="w-full flex items-center gap-3 border border-gray-200 dark:border-gray-700 rounded-xl px-4 py-3 text-sm text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-800 transition"
@@ -130,22 +120,17 @@ export default function Sidebar({
             <Moon size={18} />
           )}
 
-          {darkMode
-            ? "Light Mode"
-            : "Dark Mode"}
+          {darkMode ? "Light Mode" : "Dark Mode"}
         </button>
 
         <div className="border-t border-gray-200 dark:border-gray-700 my-6" />
 
-        {/* Real User */}
         <div className="flex items-center gap-3">
-
           <div className="w-11 h-11 rounded-full bg-blue-100 dark:bg-blue-800 flex items-center justify-center font-semibold text-blue-600 dark:text-white">
             {getInitials(user?.fullName)}
           </div>
 
           <div className="min-w-0">
-
             <h2 className="text-sm font-semibold text-gray-900 dark:text-white truncate">
               {user?.fullName || "User"}
             </h2>
@@ -153,12 +138,9 @@ export default function Sidebar({
             <p className="text-xs text-gray-500 dark:text-gray-400 capitalize">
               {user?.role || "Student"}
             </p>
-
           </div>
-
         </div>
 
-        {/* Logout */}
         <button
           onClick={handleLogout}
           className="mt-6 flex items-center gap-2 text-sm text-gray-600 dark:text-gray-300 hover:text-red-500 transition"
@@ -166,9 +148,7 @@ export default function Sidebar({
           <LogOut size={18} />
           Logout
         </button>
-
       </div>
-
     </aside>
   );
 }

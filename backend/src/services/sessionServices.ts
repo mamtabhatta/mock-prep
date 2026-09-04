@@ -3,6 +3,7 @@ import crypto from "crypto";
 import {
     eq,
     and,
+    asc,
 } from "drizzle-orm";
 
 import { db } from "../db";
@@ -11,13 +12,8 @@ import {
     sessions,
     sessionAnswers,
     feedbackReports,
-    questions,
-    questionSets,
+    sessionQuestions,
 } from "../db/schema";
-
-import {
-    CreateSessionInput,
-} from "../validations/sessionValidation";
 
 import {
     uploadAudio,
@@ -25,13 +21,12 @@ import {
     generatePresignedGetUrl,
 } from "./storageServices";
 
-import {
-    enqueueJob,
-} from "./jobServices";
+import { enqueueJob } from "./jobServices";
 
-import {
-    recordAnalyticsEvent,
-} from "./analyticsServices";
+import type {
+    CreateSessionInput,
+} from "../validations/sessionValidation";
+
 
 // ============================================
 // CREATE SESSION
@@ -41,26 +36,49 @@ export const createSession = async (
     userId: string,
     data: CreateSessionInput
 ) => {
+
+    /*
+    |--------------------------------------------------------------------------
+    | VALIDATE INTERVIEW FORMAT
+    |--------------------------------------------------------------------------
+    */
+
+    if (
+        data.module === "interview" &&
+        !data.interviewFormat
+    ) {
+        throw new Error(
+            "Interview format is required for interview sessions"
+        );
+    }
+
+
+    /*
+    |--------------------------------------------------------------------------
+    | REMOVE FORMAT FROM NON-INTERVIEW MODULES
+    |--------------------------------------------------------------------------
+    */
+
+    const interviewFormat =
+        data.module === "interview"
+            ? data.interviewFormat
+            : null;
+
+
     const [session] = await db
         .insert(sessions)
         .values({
+            ...data,
+
+            interviewFormat,
+
             userId,
-            module: data.module,
-            universityId: data.universityId ?? null,
-            courseId: data.courseId ?? null,
-            questionSetId: data.questionSetId ?? null,
+
+            status: "in_progress",
+
+            startedAt: new Date(),
         })
         .returning();
-
-    // Record analytics event
-    await recordAnalyticsEvent({
-        userId,
-        sessionId: session.id,
-        eventType: "session_started",
-        metadata: {
-            module: session.module,
-        },
-    });
 
     return session;
 };
@@ -70,76 +88,94 @@ export const createSession = async (
 // GET USER SESSIONS
 // ============================================
 
-
 export const getUserSessions = async (
     userId: string
 ) => {
-    const userSessions =
-        await db
-            .select()
-            .from(sessions)
-            .where(
-                eq(
-                    sessions.userId,
-                    userId
-                )
-            );
 
-    // Get feedback report for each session
-    const sessionsWithReports =
-        await Promise.all(
-            userSessions.map(
-                async (session) => {
-                    const [feedbackReport] =
-                        await db
-                            .select()
-                            .from(
-                                feedbackReports
-                            )
-                            .where(
-                                eq(
-                                    feedbackReports.sessionId,
-                                    session.id
-                                )
-                            );
-
-                    return {
-                        ...session,
-                        feedbackReport:
-                            feedbackReport ??
-                            null,
-                    };
-                }
+    const userSessions = await db
+        .select()
+        .from(sessions)
+        .where(
+            eq(
+                sessions.userId,
+                userId
+            )
+        )
+        .orderBy(
+            asc(
+                sessions.createdAt
             )
         );
 
-    return sessionsWithReports;
+
+    const result = await Promise.all(
+
+        userSessions.map(
+            async (session) => {
+
+                const [feedbackReport] =
+                    await db
+                        .select()
+                        .from(feedbackReports)
+                        .where(
+                            eq(
+                                feedbackReports.sessionId,
+                                session.id
+                            )
+                        )
+                        .limit(1);
+
+
+                return {
+                    ...session,
+
+                    feedbackReport:
+                        feedbackReport ??
+                        null,
+                };
+            }
+        )
+    );
+
+
+    return result;
 };
 
 
-
-
 // ============================================
-// GET SESSION DETAIL
+// GET SESSION BY ID
 // ============================================
 
 export const getSessionById = async (
     userId: string,
     sessionId: string
 ) => {
+
     const [session] = await db
         .select()
         .from(sessions)
         .where(
             and(
-                eq(sessions.id, sessionId),
-                eq(sessions.userId, userId)
+                eq(
+                    sessions.id,
+                    sessionId
+                ),
+
+                eq(
+                    sessions.userId,
+                    userId
+                )
             )
-        );
+        )
+        .limit(1);
+
 
     if (!session) {
-        throw new Error("Session not found");
+        throw new Error(
+            "Session not found"
+        );
     }
+
 
     const answers = await db
         .select()
@@ -149,7 +185,29 @@ export const getSessionById = async (
                 sessionAnswers.sessionId,
                 sessionId
             )
+        )
+        .orderBy(
+            asc(
+                sessionAnswers.createdAt
+            )
         );
+
+
+    const questions = await db
+        .select()
+        .from(sessionQuestions)
+        .where(
+            eq(
+                sessionQuestions.sessionId,
+                sessionId
+            )
+        )
+        .orderBy(
+            asc(
+                sessionQuestions.orderIndex
+            )
+        );
+
 
     const [feedbackReport] = await db
         .select()
@@ -159,36 +217,20 @@ export const getSessionById = async (
                 feedbackReports.sessionId,
                 sessionId
             )
-        );
+        )
+        .limit(1);
 
-    // Get questions belonging to this session's question set
-    const sessionQuestions = session.questionSetId
-        ? await db
-            .select()
-            .from(questions)
-            .where(
-                and(
-                    eq(
-                        questions.questionSetId,
-                        session.questionSetId
-                    ),
-                    eq(
-                        questions.isActive,
-                        true
-                    )
-                )
-            )
-            .orderBy(
-                questions.orderIndex
-            )
-        : [];
 
     return {
         ...session,
-        questions: sessionQuestions,
+
+        questions,
+
         answers,
+
         feedbackReport:
-            feedbackReport ?? null,
+            feedbackReport ??
+            null,
     };
 };
 
@@ -201,106 +243,114 @@ export const createSessionAnswer = async (
     userId: string,
     sessionId: string,
     questionId: string,
-    audioBuffer: Buffer,
-    contentType: string,
+    buffer: Buffer,
+    mimetype: string,
     durationSeconds?: number
 ) => {
-
-    // Check session ownership
-    const [session] =
-        await db
-            .select()
-            .from(sessions)
-            .where(
-                and(
-                    eq(
-                        sessions.id,
-                        sessionId
-                    ),
-                    eq(
-                        sessions.userId,
-                        userId
-                    )
-                )
-            );
+    const [session] = await db
+        .select()
+        .from(sessions)
+        .where(
+            and(
+                eq(sessions.id, sessionId),
+                eq(sessions.userId, userId)
+            )
+        )
+        .limit(1);
 
     if (!session) {
-        throw new Error(
-            "Session not found"
-        );
+        throw new Error("Session not found");
     }
 
-    // Check question
-    const [question] =
-        await db
-            .select()
-            .from(questions)
-            .where(
-                eq(
-                    questions.id,
-                    questionId
-                )
-            );
-
-    if (!question) {
-        throw new Error(
-            "Question not found"
-        );
-    }
-
-    // Generate storage key
-    const extension =
-        contentType.split("/")[1] ||
-        "webm";
-
-    const key =
-        `sessions/${sessionId}/answers/${crypto.randomUUID()}.${extension}`;
-
-    // Upload audio
-    await uploadAudio(
-        key,
-        audioBuffer,
-        contentType
+    console.log(
+        "ANSWER UPLOAD SESSION STATUS:",
+        session.status,
+        "MODULE:",
+        session.module,
+        "QUESTION:",
+        questionId
     );
 
-    // Create answer
-    const [answer] =
-        await db
+    if (session.status !== "in_progress") {
+        throw new Error("Session is no longer in progress");
+    }
+
+    const [sessionQuestion] = await db
+        .select()
+        .from(sessionQuestions)
+        .where(
+            and(
+                eq(sessionQuestions.sessionId, sessionId),
+                eq(sessionQuestions.id, questionId)
+            )
+        )
+        .limit(1);
+
+    if (!sessionQuestion) {
+        throw new Error(
+            "Question does not belong to this session"
+        );
+    }
+
+    let extension = "webm";
+
+    if (
+        mimetype === "audio/mp4" ||
+        mimetype === "audio/m4a"
+    ) {
+        extension = "m4a";
+    } else if (mimetype === "audio/mpeg") {
+        extension = "mp3";
+    } else if (mimetype === "audio/wav") {
+        extension = "wav";
+    } else if (mimetype === "audio/ogg") {
+        extension = "ogg";
+    }
+
+    const storageKey =
+        `sessions/${sessionId}/answers/${crypto.randomUUID()}.${extension}`;
+
+    await uploadAudio(
+        storageKey,
+        buffer,
+        mimetype
+    );
+
+    try {
+        const [answer] = await db
             .insert(sessionAnswers)
             .values({
                 sessionId,
-
                 questionId,
-
-                recordingUrl:
-                    key,
-
-                durationSeconds:
-                    durationSeconds ??
-                    null,
-
-                transcriptionStatus:
-                    "pending",
+                recordingUrl: storageKey,
+                durationSeconds,
+                transcriptionStatus: "pending",
             })
             .returning();
 
-    // Add transcription job
-    await enqueueJob(
-        "transcribe-answer",
-        {
-            answerId:
-                answer.id,
+        await enqueueJob(
+            "transcribe-answer",
+            {
+                answerId: answer.id,
+                sessionId,
+                recordingUrl: storageKey,
+                contentType: mimetype,
+            }
+        );
 
-            sessionId,
-
-            recordingUrl:
-                key,
-
-            contentType,
+        return answer;
+    } catch (error) {
+        try {
+            await deleteObject(storageKey);
+        } catch (cleanupError) {
+            console.error(
+                "Failed to cleanup uploaded audio:",
+                cleanupError
+            );
         }
-    );
 
-    return answer;
+        throw error;
+    }
 };
 
 
@@ -312,74 +362,111 @@ export const submitSession = async (
     userId: string,
     sessionId: string
 ) => {
-
-    // Check ownership
-    const [session] =
-        await db
-            .select()
-            .from(sessions)
-            .where(
-                and(
-                    eq(
-                        sessions.id,
-                        sessionId
-                    ),
-                    eq(
-                        sessions.userId,
-                        userId
-                    )
-                )
-            );
+    const [session] = await db
+        .select()
+        .from(sessions)
+        .where(
+            and(
+                eq(sessions.id, sessionId),
+                eq(sessions.userId, userId)
+            )
+        )
+        .limit(1);
 
     if (!session) {
-        throw new Error(
-            "Session not found"
-        );
+        throw new Error("Session not found");
     }
 
-    // Only an in-progress session
-    // can be submitted.
-    if (
-        session.status !==
-        "in_progress"
-    ) {
-        throw new Error(
-            "Session cannot be submitted"
-        );
+    if (session.status !== "in_progress") {
+        throw new Error("Session is no longer in progress");
     }
 
-    // Update status
-    const [updatedSession] =
-        await db
-            .update(sessions)
-            .set({
-                status: "submitted",
-                submittedAt:
-                    new Date(),
-            })
+    if (session.module === "speaking") {
+        const questions = await db
+            .select()
+            .from(sessionQuestions)
             .where(
-                and(
-                    eq(
-                        sessions.id,
-                        sessionId
-                    ),
-                    eq(
-                        sessions.userId,
-                        userId
-                    )
-                )
-            )
-            .returning();
+                eq(sessionQuestions.sessionId, sessionId)
+            );
 
-    // Record analytics event
-    await recordAnalyticsEvent({
-        userId,
-        sessionId,
-        eventType: "session_completed",
-        metadata: {
-            module: updatedSession.module,
-        },
-    });
+        const speakingAnswers = await db
+            .select()
+            .from(sessionAnswers)
+            .where(
+                eq(sessionAnswers.sessionId, sessionId)
+            );
+console.log("SPEAKING QUESTIONS:", questions);
+console.log("SPEAKING QUESTION COUNT:", questions.length);
+        if (questions.length !== 3) {
+            throw new Error(
+                "Speaking session does not contain exactly 3 questions"
+            );
+        }
+
+        if (speakingAnswers.length !== 3) {
+            throw new Error(
+                `Please complete all 3 speaking questions before submitting. ${speakingAnswers.length}/3 completed.`
+            );
+        }
+
+        const questionIds = new Set(
+            questions.map((question) => question.id)
+        );
+
+        const answeredQuestionIds = new Set(
+            speakingAnswers
+                .filter((answer) => answer.questionId)
+                .map((answer) => answer.questionId!)
+        );
+
+        for (const questionId of questionIds) {
+            if (!answeredQuestionIds.has(questionId)) {
+                throw new Error(
+                    "Please complete all 3 speaking questions before submitting"
+                );
+            }
+        }
+    }
+
+    const [updatedSession] = await db
+        .update(sessions)
+        .set({
+            status: "submitted",
+            submittedAt: new Date(),
+        })
+        .where(
+            and(
+                eq(sessions.id, sessionId),
+                eq(sessions.userId, userId),
+                eq(sessions.status, "in_progress")
+            )
+        )
+        .returning();
+
+    if (!updatedSession) {
+        throw new Error("Session could not be submitted");
+    }
+
+    const answers = await db
+        .select()
+        .from(sessionAnswers)
+        .where(
+            eq(sessionAnswers.sessionId, sessionId)
+        );
+
+    const allTranscriptionsCompleted =
+        answers.length > 0 &&
+        answers.every(
+            (answer) =>
+                answer.transcriptionStatus === "completed" &&
+                Boolean(answer.transcript?.trim())
+        );
+
+    if (allTranscriptionsCompleted) {
+        await enqueueJob("generate-feedback", {
+            sessionId,
+        });
+    }
 
     return updatedSession;
 };
@@ -394,23 +481,24 @@ export const deleteSession = async (
     sessionId: string
 ) => {
 
-    // Check ownership
-    const [session] =
-        await db
-            .select()
-            .from(sessions)
-            .where(
-                and(
-                    eq(
-                        sessions.id,
-                        sessionId
-                    ),
-                    eq(
-                        sessions.userId,
-                        userId
-                    )
+    const [session] = await db
+        .select()
+        .from(sessions)
+        .where(
+            and(
+                eq(
+                    sessions.id,
+                    sessionId
+                ),
+
+                eq(
+                    sessions.userId,
+                    userId
                 )
-            );
+            )
+        )
+        .limit(1);
+
 
     if (!session) {
         throw new Error(
@@ -418,48 +506,69 @@ export const deleteSession = async (
         );
     }
 
-    // Get answers before cascade deletion
-    const answers =
-        await db
-            .select()
-            .from(sessionAnswers)
-            .where(
-                eq(
-                    sessionAnswers.sessionId,
-                    sessionId
-                )
-            );
 
-    for (
-        const answer of answers
-    ) {
-        if (
-            answer.recordingUrl
-        ) {
-            await deleteObject(
-                answer.recordingUrl
-            );
-        }
-    }
-
-    await db
-        .delete(sessions)
+    const answers = await db
+        .select()
+        .from(sessionAnswers)
         .where(
             eq(
-                sessions.id,
+                sessionAnswers.sessionId,
                 sessionId
             )
         );
 
+
+    for (
+        const answer of answers
+    ) {
+
+        if (
+            answer.recordingUrl
+        ) {
+
+            try {
+
+                await deleteObject(
+                    answer.recordingUrl
+                );
+
+            } catch (error) {
+
+                console.error(
+                    `Failed to delete recording ${answer.recordingUrl}:`,
+                    error
+                );
+
+            }
+        }
+    }
+
+
+    await db
+        .delete(sessions)
+        .where(
+            and(
+                eq(
+                    sessions.id,
+                    sessionId
+                ),
+
+                eq(
+                    sessions.userId,
+                    userId
+                )
+            )
+        );
+
+
     return {
-        id: sessionId,
-        deleted: true,
+        success: true,
     };
 };
 
 
 // ============================================
-// GENERATE ANSWER PLAYBACK URL
+// GET ANSWER PLAYBACK URL
 // ============================================
 
 export const getAnswerPlaybackUrl = async (
@@ -467,23 +576,25 @@ export const getAnswerPlaybackUrl = async (
     sessionId: string,
     answerId: string
 ) => {
-    // Check session ownership
-    const [session] =
-        await db
-            .select()
-            .from(sessions)
-            .where(
-                and(
-                    eq(
-                        sessions.id,
-                        sessionId
-                    ),
-                    eq(
-                        sessions.userId,
-                        userId
-                    )
+
+    const [session] = await db
+        .select()
+        .from(sessions)
+        .where(
+            and(
+                eq(
+                    sessions.id,
+                    sessionId
+                ),
+
+                eq(
+                    sessions.userId,
+                    userId
                 )
-            );
+            )
+        )
+        .limit(1);
+
 
     if (!session) {
         throw new Error(
@@ -491,23 +602,25 @@ export const getAnswerPlaybackUrl = async (
         );
     }
 
-    // Find answer belonging to this session
-    const [answer] =
-        await db
-            .select()
-            .from(sessionAnswers)
-            .where(
-                and(
-                    eq(
-                        sessionAnswers.id,
-                        answerId
-                    ),
-                    eq(
-                        sessionAnswers.sessionId,
-                        sessionId
-                    )
+
+    const [answer] = await db
+        .select()
+        .from(sessionAnswers)
+        .where(
+            and(
+                eq(
+                    sessionAnswers.id,
+                    answerId
+                ),
+
+                eq(
+                    sessionAnswers.sessionId,
+                    sessionId
                 )
-            );
+            )
+        )
+        .limit(1);
+
 
     if (!answer) {
         throw new Error(
@@ -515,20 +628,23 @@ export const getAnswerPlaybackUrl = async (
         );
     }
 
-    if (!answer.recordingUrl) {
+
+    if (
+        !answer.recordingUrl
+    ) {
         throw new Error(
             "Recording not found"
         );
     }
 
-    // Generate short-lived playback URL
-    const playbackUrl =
+
+    const url =
         await generatePresignedGetUrl(
             answer.recordingUrl
         );
 
+
     return {
-        playbackUrl,
-        expiresIn: 300,
+        url,
     };
 };

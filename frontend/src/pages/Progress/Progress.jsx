@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from "react";
 import { Flame } from "lucide-react";
 
@@ -8,74 +7,105 @@ import StatCard from "../../components/Progress/StatCard";
 import api from "../../api/api";
 
 export default function Progress() {
+    const [sessions, setSessions] =
+        useState([]);
 
-    const [sessions, setSessions] = useState([]);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState("");
+    const [loading, setLoading] =
+        useState(true);
+
+    const [error, setError] =
+        useState("");
 
     useEffect(() => {
+        const fetchProgress =
+            async () => {
+                try {
+                    setLoading(true);
+                    setError("");
 
-        const fetchProgress = async () => {
+                    const response =
+                        await api.get(
+                            "/sessions"
+                        );
 
-            try {
+                    const data =
+                        response.data?.data ||
+                        [];
 
-                setLoading(true);
-                setError("");
+                    const sortedSessions =
+                        Array.isArray(data)
+                            ? [...data].sort(
+                                (a, b) =>
+                                    new Date(
+                                        a.createdAt
+                                    ) -
+                                    new Date(
+                                        b.createdAt
+                                    )
+                            )
+                            : [];
 
-                const response =
-                    await api.get("/sessions");
+                    setSessions(
+                        sortedSessions
+                    );
+                } catch (err) {
+                    console.error(
+                        "Failed to load progress:",
+                        err
+                    );
 
-                console.log(
-                    "Progress sessions:",
-                    response.data
-                );
-
-                const data =
-                    response.data?.data || [];
-
-                setSessions(data);
-
-            } catch (err) {
-
-                console.error(
-                    "Failed to load progress:",
-                    err
-                );
-
-                setError(
-                    err.response?.data?.message ||
-                    "Failed to load progress."
-                );
-
-            } finally {
-
-                setLoading(false);
-
-            }
-        };
+                    setError(
+                        err.response?.data?.message ||
+                        "Failed to load progress."
+                    );
+                } finally {
+                    setLoading(false);
+                }
+            };
 
         fetchProgress();
-
     }, []);
 
     const getScore = (session) => {
-
         const feedbackReport =
             session?.feedbackReport || {};
+
+        if (!feedbackReport) {
+            return null;
+        }
 
         const scores =
             feedbackReport?.scoresJson || {};
 
         const quickSnapshot =
-            feedbackReport?.quickSnapshotJson || {};
+            feedbackReport?.quickSnapshotJson ||
+            {};
 
-        const rawScore =
-            scores.overall_score ??
-            scores.overallScore ??
-            quickSnapshot.overall_score ??
-            quickSnapshot.overallScore ??
-            feedbackReport.overall_score ??
-            null;
+        let rawScore = null;
+
+        if (
+            session?.module ===
+            "speaking"
+        ) {
+            rawScore =
+                scores.overallBand ??
+                scores.overall_band ??
+                quickSnapshot.overallBand ??
+                quickSnapshot.overall_band ??
+                null;
+        }
+
+        if (
+            session?.module ===
+            "interview"
+        ) {
+            rawScore =
+                scores.overallScore ??
+                scores.overall_score ??
+                quickSnapshot.overallScore ??
+                quickSnapshot.overall_score ??
+                null;
+        }
 
         if (
             rawScore === null ||
@@ -91,31 +121,108 @@ export default function Progress() {
             return null;
         }
 
-        // Backend may return /100 or /10
-        return numericScore > 10
-            ? numericScore / 10
-            : numericScore;
+        if (
+            session?.module ===
+                "interview" &&
+            numericScore > 10
+        ) {
+            return numericScore / 10;
+        }
+
+        return numericScore;
     };
 
+    const completedSessions =
+        sessions.filter(
+            (session) =>
+                session?.feedbackReport &&
+                getScore(session) !== null
+        );
+
     const scores =
-        sessions
+        completedSessions
             .map(getScore)
             .filter(
                 (score) =>
-                    typeof score === "number"
+                    typeof score ===
+                    "number"
             );
+
     const totalSessions =
-        sessions.length;
+        completedSessions.length;
 
     const bestScore =
         scores.length > 0
             ? Math.max(...scores)
             : "--";
 
-    const streak = 0;
+    const calculateStreak = () => {
+        if (
+            completedSessions.length === 0
+        ) {
+            return 0;
+        }
+
+        const uniqueDates = [
+            ...new Set(
+                completedSessions.map(
+                    (session) =>
+                        new Date(
+                            session.createdAt
+                        )
+                            .toISOString()
+                            .split("T")[0]
+                )
+            ),
+        ].sort(
+            (a, b) =>
+                new Date(b) -
+                new Date(a)
+        );
+
+        let streak = 1;
+
+        for (
+            let i = 0;
+            i <
+            uniqueDates.length - 1;
+            i++
+        ) {
+            const current =
+                new Date(
+                    uniqueDates[i]
+                );
+
+            const previous =
+                new Date(
+                    uniqueDates[i + 1]
+                );
+
+            const difference =
+                Math.round(
+                    (
+                        current -
+                        previous
+                    ) /
+                    (1000 * 60 * 60 * 24)
+                );
+
+            if (
+                difference === 1
+            ) {
+                streak++;
+            } else {
+                break;
+            }
+        }
+
+        return streak;
+    };
+
+    const streak =
+        calculateStreak();
 
     if (loading) {
-
         return (
             <div
                 className="
@@ -126,7 +233,6 @@ export default function Progress() {
                     duration-300
                 "
             >
-
                 <div
                     className="
                         max-w-6xl
@@ -134,9 +240,7 @@ export default function Progress() {
                         py-10
                     "
                 >
-
                     <div className="max-w-3xl ml-8">
-
                         <h1
                             className="
                                 text-3xl
@@ -158,17 +262,13 @@ export default function Progress() {
                         >
                             Loading your progress...
                         </p>
-
                     </div>
-
                 </div>
-
             </div>
         );
     }
 
     if (error) {
-
         return (
             <div
                 className="
@@ -179,7 +279,6 @@ export default function Progress() {
                     duration-300
                 "
             >
-
                 <div
                     className="
                         max-w-6xl
@@ -187,9 +286,7 @@ export default function Progress() {
                         py-10
                     "
                 >
-
                     <div className="max-w-3xl ml-8">
-
                         <h1
                             className="
                                 text-3xl
@@ -219,11 +316,8 @@ export default function Progress() {
                         >
                             {error}
                         </div>
-
                     </div>
-
                 </div>
-
             </div>
         );
     }
@@ -238,7 +332,6 @@ export default function Progress() {
                 duration-300
             "
         >
-
             <div
                 className="
                     max-w-6xl
@@ -246,9 +339,7 @@ export default function Progress() {
                     py-10
                 "
             >
-
                 <div className="max-w-3xl ml-8">
-
                     <h1
                         className="
                             text-3xl
@@ -274,13 +365,12 @@ export default function Progress() {
                     </p>
 
                     <div className="mt-8">
-
                         <TrendChart
-                            sessions={sessions}
+                            sessions={
+                                completedSessions
+                            }
                         />
-
                     </div>
-
 
                     <div
                         className="
@@ -290,10 +380,11 @@ export default function Progress() {
                             gap-4
                         "
                     >
-
                         <StatCard
                             title="Sessions"
-                            value={totalSessions}
+                            value={
+                                totalSessions
+                            }
                         />
 
                         <StatCard
@@ -301,7 +392,9 @@ export default function Progress() {
                             value={
                                 bestScore === "--"
                                     ? "--"
-                                    : bestScore.toFixed(1)
+                                    : bestScore.toFixed(
+                                        1
+                                    )
                             }
                         />
 
@@ -318,14 +411,9 @@ export default function Progress() {
                                 />
                             }
                         />
-
                     </div>
-
                 </div>
-
             </div>
-
         </div>
     );
 }
-

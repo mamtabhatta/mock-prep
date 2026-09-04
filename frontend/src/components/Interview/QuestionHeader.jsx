@@ -1,133 +1,114 @@
-
-import { useEffect, useState } from "react";
-import api from "../../api/api";
-
 export default function QuestionHeader({
-  sessionId,
-  currentQuestion,
-  onQuestionsLoaded,
+  question,
+  loading,
+  error,
 }) {
-  const [questions, setQuestions] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
-
-  useEffect(() => {
-    const fetchQuestions = async () => {
-      try {
-        setLoading(true);
-        setError("");
-
-        const response = await api.get(
-          `/sessions/${sessionId}`
-        );
-
-        console.log(
-          "Session response:",
-          response.data
-        );
-
-        const session = response.data?.data;
-
-        const fetchedQuestions =
-          session?.questions || [];
-
-        if (fetchedQuestions.length === 0) {
-          setError(
-            "No questions found for this session."
-          );
-          return;
-        }
-
-        setQuestions(fetchedQuestions);
-
-        // Send questions to parent Interview component
-        if (onQuestionsLoaded) {
-          onQuestionsLoaded(fetchedQuestions);
-        }
-
-      } catch (err) {
-        console.error(
-          "Failed to fetch questions:",
-          err
-        );
-
-        setError(
-          err.response?.data?.message ||
-            "Failed to load questions."
-        );
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (sessionId) {
-      fetchQuestions();
-    }
-  }, [sessionId, onQuestionsLoaded]);
-
-  const question =
-    questions[currentQuestion];
-
+  
   if (loading) {
     return (
-      <div className="text-center max-w-3xl mx-auto mb-14">
-        <p className="text-sm text-slate-400">
-          Loading question...
+      <div className="mx-auto mb-8 max-w-2xl text-center">
+
+        <div className="flex flex-col items-center">
+
+          <div className="h-3 w-24 animate-pulse rounded bg-slate-800" />
+
+          <div className="mt-4 h-6 w-full max-w-xl animate-pulse rounded bg-slate-800" />
+
+          <div className="mt-2 h-6 w-4/5 max-w-lg animate-pulse rounded bg-slate-800" />
+
+        </div>
+
+        <p className="mt-4 text-xs text-slate-500">
+          Generating your personalized question...
         </p>
+
       </div>
     );
   }
+
+  // ============================================================
+  // ERROR
+  // ============================================================
 
   if (error) {
     return (
-      <div className="text-center max-w-3xl mx-auto mb-14">
-        <p className="text-sm text-red-400">
-          {error}
-        </p>
+      <div className="mx-auto mb-8 max-w-2xl text-center">
+
+        <div className="rounded-lg border border-red-900/50 bg-red-950/30 px-4 py-3">
+
+          <p className="text-xs font-medium text-red-400">
+            {error}
+          </p>
+
+        </div>
+
       </div>
     );
   }
+
+  // ============================================================
+  // NO QUESTION
+  // ============================================================
 
   if (!question) {
     return (
-      <div className="text-center max-w-3xl mx-auto mb-14">
-        <p className="text-sm text-slate-400">
-          Question not available.
-        </p>
+      <div className="mx-auto mb-8 max-w-2xl text-center">
+
+        <div className="rounded-lg border border-slate-800 bg-slate-900/50 px-4 py-3">
+
+          <p className="text-xs text-slate-400">
+            Question not available.
+          </p>
+
+        </div>
+
       </div>
     );
   }
 
+  // ============================================================
+  // QUESTION TYPE
+  // ============================================================
+
+  const formattedType =
+    String(
+      question.type ||
+        question.typeTag ||
+        "motivational"
+    )
+      .replace(/_/g, " ")
+      .replace(
+        /\b\w/g,
+        (letter) =>
+          letter.toUpperCase()
+      );
+
+  const questionNumber =
+    question.orderIndex || 1;
+
+  const totalQuestions =
+    question.totalQuestions || 5;
+
+  // ============================================================
+  // UI
+  // ============================================================
+
   return (
-    <div className="text-center max-w-3xl mx-auto mb-14">
+    <div className="mx-auto mb-8 max-w-2xl text-center">
 
-      {/* Question Type */}
-
-      <p className="
-        uppercase
-        tracking-[5px]
-        text-blue-400
-        font-semibold
-        text-sm
-      ">
-        {question.typeTag || "Mock Interview"}
+      <p className="text-xs font-semibold uppercase tracking-[3px] text-blue-400">
+        {formattedType}
       </p>
 
-      {/* Question */}
+      <p className="mt-2 text-[11px] font-medium text-slate-500">
+        Question {questionNumber} of{" "}
+        {totalQuestions}
+      </p>
 
-      <h1 className="
-        mt-5
-        text-3xl
-        sm:text-4xl
-        lg:text-5xl
-        font-bold
-        leading-tight
-        text-white
-      ">
+      <h1 className="mt-3 text-xl font-bold leading-snug text-white sm:text-2xl lg:text-3xl">
         {question.text}
       </h1>
 
     </div>
   );
 }
-

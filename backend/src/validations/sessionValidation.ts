@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+// ============================================
+// CREATE SESSION
+// ============================================
+
 export const createSessionSchema = z.object({
     module: z.enum([
         "interview",
@@ -25,17 +29,45 @@ export const createSessionSchema = z.object({
         .uuid()
         .optional()
         .nullable(),
+
+    /*
+    |--------------------------------------------------------------------------
+    | INTERVIEW FORMAT
+    |--------------------------------------------------------------------------
+    */
+
+    interviewFormat: z
+        .enum([
+            "Panel",
+            "1-on-1",
+            "MMI",
+        ])
+        .optional()
+        .nullable(),
 });
 
-export const createSessionAnswerSchema = z.object({
-    questionId: z.string().uuid(),
 
-    durationSeconds: z.coerce
+// ============================================
+// CREATE SESSION ANSWER
+// ============================================
+
+export const createSessionAnswerSchema = z.object({
+    questionId: z
+        .string()
+        .uuid(),
+
+    durationSeconds: z
+        .coerce
         .number()
         .int()
         .positive()
         .optional(),
 });
+
+
+// ============================================
+// TYPES
+// ============================================
 
 export type CreateSessionInput =
     z.infer<typeof createSessionSchema>;

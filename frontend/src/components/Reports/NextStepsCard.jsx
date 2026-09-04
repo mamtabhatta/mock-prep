@@ -1,29 +1,18 @@
-
 import { Download } from "lucide-react";
 import { useNavigate } from "react-router-dom";
+import axios from "axios";
 
 export default function NextStepsCard({ report }) {
     const navigate = useNavigate();
 
-    // ============================================
-    // GET AI FEEDBACK
-    // ============================================
-
     const aiFeedback =
         report?.feedbackReport?.aiFeedbackJson || {};
-
-    // ============================================
-    // GET RECOMMENDATIONS
-    // ============================================
 
     const recommendations =
         Array.isArray(aiFeedback.recommendations)
             ? aiFeedback.recommendations
             : [];
 
-    // ============================================
-    // FALLBACK STEPS
-    // ============================================
 
     const steps =
         recommendations.length > 0
@@ -78,60 +67,101 @@ export default function NextStepsCard({ report }) {
         return normalizedScore < 6;
     });
 
-    // ============================================
-    // DRILL WEAK QUESTIONS
-    // ============================================
+    const handleDrillWeakQuestions = async () => {
+        if (weakQuestions.length === 0) {
+            alert(
+                "You don't have any weak questions to drill."
+            );
+            return;
+        }
 
-    const handleDrillWeakQuestions = () => {
-    if (weakQuestions.length === 0) {
-        alert("You don't have any weak questions to drill.");
-        return;
-    }
+        try {
+            const token =
+                localStorage.getItem("accessToken");
 
-    const questionIds = weakQuestions
-        .map((question) => question.id)
-        .join(",");
+            if (!token) {
+                navigate("/login");
+                return;
+            }
 
-    navigate(
-        `/dashboard/interview/${report.id}?questions=${questionIds}`
-    );
-};
+            const response = await axios.post(
+                `${import.meta.env.VITE_API_URL}/sessions`,
+                {
+                    module: "interview",
 
-    // ============================================
-    // DOWNLOAD PDF
-    // ============================================
+                    universityId:
+                        report?.universityId ?? null,
+
+                    courseId:
+                        report?.courseId ?? null,
+
+                    questionSetId:
+                        report?.questionSetId ?? null,
+                },
+                {
+                    headers: {
+                        Authorization: `Bearer ${token}`,
+                        "Content-Type": "application/json",
+                    },
+                }
+            );
+
+            const newSessionId =
+                response.data?.data?.id;
+
+            if (!newSessionId) {
+                console.error(
+                    "Session creation response:",
+                    response.data
+                );
+
+                throw new Error(
+                    "Failed to create a new interview session."
+                );
+            }
+
+            const questionIds = weakQuestions
+                .map((question) => question.id)
+                .join(",");
+
+            navigate(
+                `/dashboard/interview/${newSessionId}?questions=${questionIds}`
+            );
+        } catch (error) {
+            console.error(
+                "Failed to create drill session:",
+                error
+            );
+
+            alert(
+                error.response?.data?.message ||
+                "Failed to start weak question practice."
+            );
+        }
+    };
+
+
 
     const handleDownload = () => {
         window.print();
     };
 
-    // ============================================
-    // BACK TO DASHBOARD
-    // ============================================
-
+  
     const handleBackToDashboard = () => {
         navigate("/dashboard");
     };
 
-    // ============================================
-    // UI
-    // ============================================
 
     return (
         <div className="mt-6 rounded-2xl bg-blue-50 dark:bg-blue-950/30 border border-blue-100 dark:border-blue-900 p-6">
 
-            {/* ================================= */}
             {/* TITLE */}
-            {/* ================================= */}
 
             <h2 className="text-lg font-semibold text-gray-900 dark:text-white">
                 Your Next Steps
             </h2>
 
-
-            {/* ================================= */}
             {/* STEPS */}
-            {/* ================================= */}
 
             <div className="mt-5 space-y-4">
 
@@ -140,7 +170,6 @@ export default function NextStepsCard({ report }) {
                         key={index}
                         className="flex items-center gap-3"
                     >
-
                         <div className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">
                             {index + 1}
                         </div>
@@ -148,22 +177,16 @@ export default function NextStepsCard({ report }) {
                         <p className="text-sm text-gray-700 dark:text-gray-300">
                             {step}
                         </p>
-
                     </div>
                 ))}
 
             </div>
 
-
-            {/* ================================= */}
             {/* BUTTONS */}
-            {/* ================================= */}
 
             <div className="mt-7 flex flex-wrap items-center gap-3 print:hidden">
 
-                {/* ================================= */}
                 {/* DRILL WEAK QUESTIONS */}
-                {/* ================================= */}
 
                 <button
                     type="button"
@@ -183,10 +206,7 @@ export default function NextStepsCard({ report }) {
                     Drill Weak Questions
                 </button>
 
-
-                {/* ================================= */}
                 {/* DOWNLOAD PDF */}
-                {/* ================================= */}
 
                 <button
                     type="button"
@@ -213,14 +233,10 @@ export default function NextStepsCard({ report }) {
                     "
                 >
                     <Download size={16} />
-
                     Download PDF
                 </button>
 
-
-                {/* ================================= */}
                 {/* BACK TO DASHBOARD */}
-                {/* ================================= */}
 
                 <button
                     type="button"
@@ -243,4 +259,3 @@ export default function NextStepsCard({ report }) {
         </div>
     );
 }
-

@@ -1,4 +1,3 @@
-
 import { ArrowRight } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
@@ -21,7 +20,16 @@ export default function ReportCard({ report }) {
         "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300";
 
     const handleViewReport = () => {
-        navigate(`/dashboard/reports/${report.id}`);
+        if (report.module === "speaking") {
+            navigate(
+                `/dashboard/speaking-detail/${report.id}`
+            );
+            return;
+        }
+
+        navigate(
+            `/dashboard/reports/${report.id}`
+        );
     };
 
     return (
@@ -44,10 +52,6 @@ export default function ReportCard({ report }) {
             "
         >
 
-            {/* ================================= */}
-            {/* LEFT */}
-            {/* ================================= */}
-
             <div
                 className="
                     flex
@@ -56,8 +60,6 @@ export default function ReportCard({ report }) {
                     min-w-0
                 "
             >
-
-                {/* SCORE */}
 
                 <div
                     className={`
@@ -76,11 +78,7 @@ export default function ReportCard({ report }) {
                     {report.score}
                 </div>
 
-                {/* INFO */}
-
                 <div className="min-w-0">
-
-                    {/* TITLE */}
 
                     <h2
                         className="
@@ -106,8 +104,6 @@ export default function ReportCard({ report }) {
                         )}
                     </h2>
 
-                    {/* COURSE + DATE */}
-
                     <p
                         className="
                             text-sm
@@ -127,10 +123,6 @@ export default function ReportCard({ report }) {
                 </div>
 
             </div>
-
-            {/* ================================= */}
-            {/* VIEW */}
-            {/* ================================= */}
 
             <button
                 type="button"
@@ -157,4 +149,3 @@ export default function ReportCard({ report }) {
         </div>
     );
 }
-
